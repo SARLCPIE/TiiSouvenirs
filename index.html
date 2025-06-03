@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Commande Souvenirs</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    h1, h2 {
+      text-align: center;
+    }
+    .categorie {
+      margin-top: 40px;
+    }
+    .produits {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+    }
+    .produit {
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 10px;
+      width: 160px;
+      text-align: center;
+    }
+    .produit img {
+      width: 100%;
+      height: auto;
+    }
+    .client-select, .total, .export {
+      text-align: center;
+      margin-top: 20px;
+    }
+    .total {
+      font-weight: bold;
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <h1>Commande Souvenirs</h1>
+  <div class="client-select">
+  <label for="client">Client :</label>
+  <input type="text" id="client" placeholder="Nom du client" />
+</div>
+
+  <div id="produitsContainer"></div>
+  <div class="total" id="total">Total : 0 CFP</div>
+<div class="export">
+  <button onclick="exportPDF()">Exporter en PDF</button>
+  <button onclick="envoyerCommande()">Envoyer la commande</button>
+  <button onclick="exporterTexte()">Exporter en .txt</button>
+</div>
+
+  <script>
+  const produits = [
+    // Décapsuleurs (à 350 frs)
+    { id: 1, nom: "Bo Mag Flag", prix: 350, image: "images/bo-mag-flag.png", categorie: "Décapsuleurs" },
+    { id: 2, nom: "Bo Mag Rai", prix: 350, image: "images/bo-mag-rai.png", categorie: "Décapsuleurs" },
+    { id: 3, nom: "Bo Mag Tor", prix: 350, image: "images/bo-mag-tor.png", categorie: "Décapsuleurs" },
+    { id: 4, nom: "Bo Pc Flag", prix: 350, image: "images/bo-pc-flag.png", categorie: "Décapsuleurs" },
+    { id: 5, nom: "Bo Pc Rai", prix: 350, image: "images/bo-pc-rai.png", categorie: "Décapsuleurs" },
+    { id: 6, nom: "Bo Pc Tor", prix: 350, image: "images/bo-pc-tor.png", categorie: "Décapsuleurs" },
+
+    // Dessous de verre (à 100 frs)
+    { id: 7, nom: "COA LEZ", prix: 100, image: "images/coa-lez.png", categorie: "Dessous de verre" },
+    { id: 8, nom: "COA FLAG", prix: 100, image: "images/coa-flag.png", categorie: "Dessous de verre" },
+    { id: 9, nom: "COA HIB", prix: 100, image: "images/coa-hib.png", categorie: "Dessous de verre" },
+    { id: 10, nom: "COA PAT", prix: 100, image: "images/coa-pat.png", categorie: "Dessous de verre" },
+    { id: 11, nom: "COA RAI", prix: 100, image: "images/coa-rai.png", categorie: "Dessous de verre" },
+    { id: 12, nom: "COA TOR", prix: 100, image: "images/coa-tor.png", categorie: "Dessous de verre" },
+
+    // Dessous de plat (à 500 frs)
+    { id: 13, nom: "COAB FLAG", prix: 500, image: "images/coa-flag.png", categorie: "Dessous de plat" },
+    { id: 14, nom: "COAB RAI", prix: 500, image: "images/coa-rai.png", categorie: "Dessous de plat" },
+    { id: 15, nom: "COAB TOR", prix: 500, image: "images/coa-tor.png", categorie: "Dessous de plat" },
+
+    // Miroirs (à 350 frs)
+    { id: 16, nom: "Mir Comp Flag", prix: 350, image: "images/mir-comp-flag.png", categorie: "Miroirs" },
+    { id: 17, nom: "Mir Comp Hib", prix: 350, image: "images/mir-comp-hib.png", categorie: "Miroirs" },
+    { id: 18, nom: "Mir Comp Rai", prix: 350, image: "images/mir-comp-rai.png", categorie: "Miroirs" },
+    { id: 19, nom: "Mir Comp Tor", prix: 350, image: "images/mir-comp-tor.png", categorie: "Miroirs" },
+
+    // Boîtes de shooters (à 600 frs)
+    { id: 20, nom: "Shot Box 1", prix: 600, image: "images/shot-box-1.png", categorie: "Boîtes de shooters" },
+    { id: 21, nom: "Shot Box 2", prix: 600, image: "images/shot-box-2.png", categorie: "Boîtes de shooters" }
+  ];
+</script>
+
+  <script>
+    const container = document.getElementById("produitsContainer");
+    const totalEl = document.getElementById("total");
+
+    function afficherProduits() {
+      const categories = {};
+      produits.forEach(p => {
+        if (!categories[p.categorie]) categories[p.categorie] = [];
+        categories[p.categorie].push(p);
+      });
+
+      for (const [categorie, liste] of Object.entries(categories)) {
+        const section = document.createElement("div");
+        section.className = "categorie";
+        const titre = document.createElement("h2");
+        titre.textContent = categorie;
+        section.appendChild(titre);
+
+        const zone = document.createElement("div");
+        zone.className = "produits";
+
+        liste.forEach((produit, index) => {
+          const div = document.createElement("div");
+          div.className = "produit";
+
+          const img = document.createElement("img");
+          img.src = produit.image;
+          img.alt = produit.nom;
+
+          const nom = document.createElement("div");
+          nom.textContent = produit.nom;
+
+          const prix = document.createElement("div");
+          prix.textContent = produit.prix + " CFP";
+
+          const input = document.createElement("input");
+          input.type = "number";
+          input.min = "0";
+          input.value = "0";
+          input.className = "quantity-input";
+          input.dataset.id = produit.id;
+          input.addEventListener("input", calculerTotal);
+
+          div.appendChild(img);
+          div.appendChild(nom);
+          div.appendChild(prix);
+          div.appendChild(input);
+          zone.appendChild(div);
+        });
+
+        section.appendChild(zone);
+        container.appendChild(section);
+      }
+    }
+
+    function calculerTotal() {
+      let total = 0;
+      const inputs = document.querySelectorAll(".quantity-input");
+      inputs.forEach(input => {
+     const id = parseInt(input.dataset.id);
+const produit = produits.find(p => p.id === id);
+const qte = parseInt(input.value || "0");
+total += qte * produit.prix;
+      });
+      totalEl.textContent = "Total : " + total + " CFP";
+    }
+
+    async function exportPDF() {
+      const client = document.getElementById('client').value;
+      if (!client) {
+        alert('Veuillez sélectionner un client.');
+        return;
+      }
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      let y = 10;
+      doc.text('Client : ' + client, 10, y);
+      y += 10;
+
+      let total = 0;
+      const quantityInputs = document.querySelectorAll('.quantity-input');
+      quantityInputs.forEach(input => {
+  const quantity = parseInt(input.value) || 0;
+  if (quantity > 0) {
+    const id = parseInt(input.dataset.id);
+    const produit = produits.find(p => p.id === id);
+    const lineTotal = quantity * produit.prix;
+    total += lineTotal;
+  doc.text(`${produit.nom} x ${quantity} = ${lineTotal} CFP`, 10, y);
+    y += 10;
+    if (y > 280) {
+      doc.addPage();
+      y = 10;
+    }
+  }
+});
+
+      doc.text('Total : ' + total + ' CFP', 10, y + 10);
+      doc.save('commande_' + client.replace(/\s+/g, '_') + '.pdf');
+    }
+function envoyerCommande() {
+  const client = document.getElementById('client').value;
+  if (!client) {
+    alert('Veuillez sélectionner un client.');
+    return;
+  }
+
+  const commande = [];
+  const inputs = document.querySelectorAll(".quantity-input");
+
+  inputs.forEach(input => {
+    const quantity = parseInt(input.value) || 0;
+    if (quantity > 0) {
+      const id = parseInt(input.dataset.id);
+      const produit = produits.find(p => p.id === id);
+      if (produit) {
+        commande.push({
+          produit: produit.nom,
+          quantite: quantity,
+          prix: produit.prix
+        });
+      }
+    }
+  });
+
+  if (commande.length === 0) {
+    alert("Aucun produit sélectionné.");
+    return;
+  }
+
+let email = "sarlcpie@gmail.com"; // Remplace par ton adresse email
+let sujet = "Commande de " + client;
+let corps = "Commande de : " + client + "\n\n";
+
+commande.forEach(item => {
+  corps += `${item.produit} x ${item.quantite} = ${item.quantite * item.prix} CFP\n`;
+});
+
+corps += `\nTotal : ${commande.reduce((sum, item) => sum + item.quantite * item.prix, 0)} CFP`;
+
+let mailtoLink = `mailto:${email}?subject=${encodeURIComponent(sujet)}&body=${encodeURIComponent(corps)}`;
+window.location.href = mailtoLink;}
+
+function exporterTexte() {
+  const client = document.getElementById('client').value.trim();
+  if (!client) {
+    alert("Veuillez entrer le nom du client.");
+    return;
+  }
+
+  let texte = `Client : ${client}\n\n`;
+  let total = 0;
+
+  const inputs = document.querySelectorAll('.quantity-input');
+  inputs.forEach(input => {
+    const quantity = parseInt(input.value) || 0;
+    if (quantity > 0) {
+      const id = parseInt(input.dataset.id);
+      const produit = produits.find(p => p.id === id);
+      const lineTotal = quantity * produit.prix;
+      total += lineTotal;
+      texte += `${produit.nom} x ${quantity} = ${lineTotal} CFP\n`;
+    }
+  });
+
+  texte += `\nTotal : ${total} CFP`;
+
+  const blob = new Blob([texte], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `commande_${client.replace(/\s+/g, '_')}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+    afficherProduits();
+  </script>
+</body>
+</html>
