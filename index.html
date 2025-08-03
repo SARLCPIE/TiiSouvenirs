@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -46,114 +45,258 @@
 <body>
   <h1>Commande Souvenirs</h1>
   <div class="client-select">
-    <label for="client">Client :</label>
-    <input type="text" id="client" placeholder="Nom du client" />
-  </div>
+  <label for="client">Client :</label>
+  <input type="text" id="client" placeholder="Nom du client" />
+</div>
+
   <div id="produitsContainer"></div>
-  <div class="total" id="total">Total : 0 CFP</div>
-  <div class="export">
-    <button onclick="exportPDF()">Exporter en PDF</button>
-    <button onclick="envoyerCommande()">Envoyer la commande</button>
-    <button onclick="exporterTexte()">Exporter en .txt</button>
+  <div class="total" id="total">
+    Total HT : 0 CFP
+    <br />TVA (16%) : 0 CFP
+    <br />TOTAL TTC : 0 CFP
   </div>
+<div class="export">
+  <button onclick="exportPDF()">Exporter en PDF</button>
+  <button onclick="envoyerCommande()">Envoyer la commande</button>
+  <button onclick="exporterTexte()">Exporter en .txt</button>
+</div>
+
   <script>
 const produits = [
-  { id: 1, nom: "Bo Mag Flag", prix: 275, image: "images/bo-mag-flag.png", categorie: "Décapsuleurs" },
-  { id: 2, nom: "Bo Mag Rai", prix: 275, image: "images/bo-mag-rai.png", categorie: "Décapsuleurs" },
-  { id: 3, nom: "Bo Mag Tor", prix: 275, image: "images/bo-mag-tor.png", categorie: "Décapsuleurs" },
-  { id: 4, nom: "Bo Pc Flag", prix: 275, image: "images/bo-pc-flag.png", categorie: "Décapsuleurs" },
-  { id: 5, nom: "Bo Pc Rai", prix: 275, image: "images/bo-pc-rai.png", categorie: "Décapsuleurs" },
-  { id: 6, nom: "Bo Pc Tor", prix: 275, image: "images/bo-pc-tor.png", categorie: "Décapsuleurs" },
-  { id: 7, nom: "COA LEZ", prix: 95, image: "images/coa-lez.png", categorie: "Dessous de verre" },
-  { id: 8, nom: "COA FLAG", prix: 95, image: "images/coa-flag.png", categorie: "Dessous de verre" },
-  { id: 9, nom: "COA HIB", prix: 95, image: "images/coa-hib.png", categorie: "Dessous de verre" },
-  { id: 10, nom: "COA PAT", prix: 95, image: "images/coa-pat.png", categorie: "Dessous de verre" },
-  { id: 11, nom: "COA RAI", prix: 95, image: "images/coa-rai.png", categorie: "Dessous de verre" },
-  { id: 12, nom: "COA TOR", prix: 95, image: "images/coa-tor.png", categorie: "Dessous de verre" },
-  { id: 13, nom: "COAB FLAG", prix: 430, image: "images/coa-flag.png", categorie: "Dessous de plat" },
-  { id: 14, nom: "COAB TOR", prix: 430, image: "images/coa-tor.png", categorie: "Dessous de plat" },
-  { id: 15, nom: "Mir Comp Flag", prix: 300, image: "images/mir-comp-flag.png", categorie: "Miroirs" },
-  { id: 16, nom: "Mir Comp Hib", prix: 300, image: "images/mir-comp-hib.png", categorie: "Miroirs" },
-  { id: 17, nom: "Mir Comp Rai", prix: 300, image: "images/mir-comp-rai.png", categorie: "Miroirs" },
-  { id: 18, nom: "Mir Comp Tor", prix: 300, image: "images/mir-comp-tor.png", categorie: "Miroirs" },
-  { id: 19, nom: "Shot Box 1", prix: 520, image: "images/shot-box-1.png", categorie: "Boîtes de shooters" },
-  { id: 20, nom: "Shot Box 2", prix: 520, image: "images/shot-box-2.png", categorie: "Boîtes de shooters" }
-];
+    // Décapsuleurs (à 345 frs)
+    { id: 1, nom: "Bo Mag Flag", prix: 275, image: "images/bo-mag-flag.png", categorie: "Décapsuleurs" },
+    { id: 2, nom: "Bo Mag Rai", prix: 275, image: "images/bo-mag-rai.png", categorie: "Décapsuleurs" },
+    { id: 3, nom: "Bo Mag Tor", prix: 275, image: "images/bo-mag-tor.png", categorie: "Décapsuleurs" },
+    { id: 4, nom: "Bo Pc Flag", prix: 275, image: "images/bo-pc-flag.png", categorie: "Décapsuleurs" },
+    { id: 5, nom: "Bo Pc Rai", prix: 275, image: "images/bo-pc-rai.png", categorie: "Décapsuleurs" },
+    { id: 6, nom: "Bo Pc Tor", prix: 275, image: "images/bo-pc-tor.png", categorie: "Décapsuleurs" },
 
-const container = document.getElementById("produitsContainer");
-const totalEl = document.getElementById("total");
+    // Dessous de verre (à 95 frs)
+    { id: 7, nom: "COA LEZ", prix: 95, image: "images/coa-lez.png", categorie: "Dessous de verre" },
+    { id: 8, nom: "COA FLAG", prix: 95, image: "images/coa-flag.png", categorie: "Dessous de verre" },
+    { id: 9, nom: "COA HIB", prix: 95, image: "images/coa-hib.png", categorie: "Dessous de verre" },
+    { id: 10, nom: "COA PAT", prix: 95, image: "images/coa-pat.png", categorie: "Dessous de verre" },
+    { id: 11, nom: "COA RAI", prix: 95, image: "images/coa-rai.png", categorie: "Dessous de verre" },
+    { id: 12, nom: "COA TOR", prix: 95, image: "images/coa-tor.png", categorie: "Dessous de verre" },
 
-function afficherProduits() {
-  const categories = {};
-  produits.forEach(p => {
-    if (!categories[p.categorie]) categories[p.categorie] = [];
-    categories[p.categorie].push(p);
-  });
+    // Dessous de plat (à 430 frs)
+    { id: 13, nom: "COAB FLAG", prix: 430, image: "images/coa-flag.png", categorie: "Dessous de plat" },
+    { id: 14, nom: "COAB TOR", prix: 430, image: "images/coa-tor.png", categorie: "Dessous de plat" },
 
-  for (const [categorie, liste] of Object.entries(categories)) {
-    const section = document.createElement("div");
-    section.className = "categorie";
-    const titre = document.createElement("h2");
-    titre.textContent = categorie;
-    section.appendChild(titre);
+    // Miroirs (à 300 frs)
+    { id: 15, nom: "Mir Comp Flag", prix: 300, image: "images/mir-comp-flag.png", categorie: "Miroirs" },
+    { id: 16, nom: "Mir Comp Hib", prix: 300, image: "images/mir-comp-hib.png", categorie: "Miroirs" },
+    { id: 17, nom: "Mir Comp Rai", prix: 300, image: "images/mir-comp-rai.png", categorie: "Miroirs" },
+    { id: 18, nom: "Mir Comp Tor", prix: 300, image: "images/mir-comp-tor.png", categorie: "Miroirs" },
 
-    const zone = document.createElement("div");
-    zone.className = "produits";
+    // Boîtes de shooters (à 520 frs)
+    { id: 19, nom: "Shot Box 1", prix: 520, image: "images/shot-box-1.png", categorie: "Boîtes de shooters" },
+    { id: 20, nom: "Shot Box 2", prix: 520, image: "images/shot-box-2.png", categorie: "Boîtes de shooters" }
+  ];
 
-    liste.forEach(produit => {
-      const div = document.createElement("div");
-      div.className = "produit";
+</script>
 
-      const img = document.createElement("img");
-      img.src = produit.image;
-      img.alt = produit.nom;
+  <script>
+    const container = document.getElementById("produitsContainer");
+    const totalEl = document.getElementById("total");
 
-      const nom = document.createElement("div");
-      nom.textContent = produit.nom;
+    function afficherProduits() {
+      const categories = {};
+      produits.forEach(p => {
+        if (!categories[p.categorie]) categories[p.categorie] = [];
+        categories[p.categorie].push(p);
+      });
 
-      const prix = document.createElement("div");
-      prix.textContent = produit.prix + " CFP HT";
+      for (const [categorie, liste] of Object.entries(categories)) {
+        const section = document.createElement("div");
+        section.className = "categorie";
+        const titre = document.createElement("h2");
+        titre.textContent = categorie;
+        section.appendChild(titre);
 
-      const input = document.createElement("input");
-      input.type = "number";
-      input.min = "0";
-      input.value = "0";
-      input.className = "quantity-input";
-      input.dataset.id = produit.id;
-      input.addEventListener("input", calculerTotal);
+        const zone = document.createElement("div");
+        zone.className = "produits";
 
-      div.appendChild(img);
-      div.appendChild(nom);
-      div.appendChild(prix);
-      div.appendChild(input);
-      zone.appendChild(div);
-    });
+        liste.forEach((produit, index) => {
+          const div = document.createElement("div");
+          div.className = "produit";
 
-    section.appendChild(zone);
-    container.appendChild(section);
-  }
-}
+          const img = document.createElement("img");
+          img.src = produit.image;
+          img.alt = produit.nom;
 
-function calculerTotal() {
-  let total = 0;
-  const inputs = document.querySelectorAll(".quantity-input");
-  inputs.forEach(input => {
+          const nom = document.createElement("div");
+          nom.textContent = produit.nom;
+
+          const prix = document.createElement("div");
+          prix.textContent = produit.prix + " CFP HT";
+
+          const input = document.createElement("input");
+          input.type = "number";
+          input.min = "0";
+          input.value = "0";
+          input.className = "quantity-input";
+          input.dataset.id = produit.id;
+          input.addEventListener("input", calculerTotal);
+
+          div.appendChild(img);
+          div.appendChild(nom);
+          div.appendChild(prix);
+          div.appendChild(input);
+          zone.appendChild(div);
+        });
+
+        section.appendChild(zone);
+        container.appendChild(section);
+      }
+    }
+
+    function calculerTotal() {
+      let totalHT = 0;
+      const inputs = document.querySelectorAll(".quantity-input");
+      inputs.forEach(input => {
+     const id = parseInt(input.dataset.id);
+const produit = produits.find(p => p.id === id);
+const qte = parseInt(input.value || "0");
+totalHT += qte * produit.prix;
+      });
+      const tva = Math.round(totalHT * 0.16);
+      const totalTTC = totalHT + tva;
+      totalEl.innerHTML =
+        "Total HT : " + totalHT + " CFP" +
+        "<br />TVA (16%) : " + tva + " CFP" +
+        "<br />TOTAL TTC : " + totalTTC + " CFP";
+    }
+
+    async function exportPDF() {
+      const client = document.getElementById('client').value;
+      if (!client) {
+        alert('Veuillez sélectionner un client.');
+        return;
+      }
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      let y = 10;
+      doc.text('Client : ' + client, 10, y);
+      y += 10;
+
+      let totalHT = 0;
+      const quantityInputs = document.querySelectorAll('.quantity-input');
+      quantityInputs.forEach(input => {
+  const quantity = parseInt(input.value) || 0;
+  if (quantity > 0) {
     const id = parseInt(input.dataset.id);
     const produit = produits.find(p => p.id === id);
-    const qte = parseInt(input.value || "0");
-    total += qte * produit.prix;
-  });
-  const tva = Math.round(total * 0.16);
-  const ttc = total + tva;
-  totalEl.innerHTML =
-    "Total HT : " + total + " CFP HT<br>" +
-    "TVA (16%) : " + tva + " CFP<br>" +
-    "Total TTC : " + ttc + " CFP";
-}
-
-window.addEventListener("DOMContentLoaded", () => {
-  afficherProduits();
+    const lineTotal = quantity * produit.prix;
+    totalHT += lineTotal;
+  doc.text(`${produit.nom} x ${quantity} = ${lineTotal} CFP HT`, 10, y);
+    y += 10;
+    if (y > 280) {
+      doc.addPage();
+      y = 10;
+    }
+  }
 });
+
+      const tva = Math.round(totalHT * 0.16);
+      const totalTTC = totalHT + tva;
+      doc.text('Total HT : ' + totalHT + ' CFP', 10, y + 10);
+      doc.text('TVA (16%) : ' + tva + ' CFP', 10, y + 20);
+      doc.text('TOTAL TTC : ' + totalTTC + ' CFP', 10, y + 30);
+      doc.save('commande_' + client.replace(/\s+/g, '_') + '.pdf');
+    }
+function envoyerCommande() {
+  const client = document.getElementById('client').value;
+  if (!client) {
+    alert('Veuillez sélectionner un client.');
+    return;
+  }
+
+  const commande = [];
+  const inputs = document.querySelectorAll(".quantity-input");
+
+  inputs.forEach(input => {
+    const quantity = parseInt(input.value) || 0;
+    if (quantity > 0) {
+      const id = parseInt(input.dataset.id);
+      const produit = produits.find(p => p.id === id);
+      if (produit) {
+        commande.push({
+          produit: produit.nom,
+          quantite: quantity,
+          prix: produit.prix
+        });
+      }
+    }
+  });
+
+  if (commande.length === 0) {
+    alert("Aucun produit sélectionné.");
+    return;
+  }
+
+let email = "sarlcpie@gmail.com"; // Remplace par ton adresse email
+let sujet = "Commande de " + client;
+let corps = "Commande de : " + client + "\n\n";
+commande.forEach(item => {
+  corps += `${item.produit} x ${item.quantite} = ${item.quantite * item.prix} CFP HT\n`;
+});
+const totalHT = commande.reduce((sum, item) => sum + item.quantite * item.prix, 0);
+const tva = Math.round(totalHT * 0.16);
+const totalTTC = totalHT + tva;
+corps += `\nTotal HT : ${totalHT} CFP`;
+corps += `\nTVA (16%) : ${tva} CFP`;
+corps += `\nTOTAL TTC : ${totalTTC} CFP`;
+
+let mailtoLink = `mailto:${email}?subject=${encodeURIComponent(sujet)}&body=${encodeURIComponent(corps)}`;
+window.location.href = mailtoLink;}
+
+function exporterTexte() {
+  const client = document.getElementById('client').value.trim();
+  if (!client) {
+    alert("Veuillez entrer le nom du client.");
+    return;
+  }
+
+  let texte = `Client : ${client}\n\n`;
+  let totalHT = 0;
+
+  const inputs = document.querySelectorAll('.quantity-input');
+  inputs.forEach(input => {
+    const quantity = parseInt(input.value) || 0;
+    if (quantity > 0) {
+      const id = parseInt(input.dataset.id);
+      const produit = produits.find(p => p.id === id);
+      const lineTotal = quantity * produit.prix;
+      totalHT += lineTotal;
+      texte += `${produit.nom} x ${quantity} = ${lineTotal} CFP HT\n`;
+    }
+  });
+
+  const tva = Math.round(totalHT * 0.16);
+  const totalTTC = totalHT + tva;
+  texte += `\nTotal HT : ${totalHT} CFP`;
+  texte += `\nTVA (16%) : ${tva} CFP`;
+  texte += `\nTOTAL TTC : ${totalTTC} CFP`;
+
+  const blob = new Blob([texte], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `commande_${client.replace(/\s+/g, '_')}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+    afficherProduits();
+    calculerTotal();
   </script>
 </body>
 </html>
+
+
+
