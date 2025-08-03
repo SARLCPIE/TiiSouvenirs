@@ -50,7 +50,11 @@
 </div>
 
   <div id="produitsContainer"></div>
-  <div class="total" id="total">Total : 0 CFP</div>
+  <div class="total" id="total">
+    Total HT : 0 CFP
+    <br />TVA (16%) : 0 CFP
+    <br />TOTAL TTC : 0 CFP
+  </div>
 <div class="export">
   <button onclick="exportPDF()">Exporter en PDF</button>
   <button onclick="envoyerCommande()">Envoyer la commande</button>
@@ -125,7 +129,7 @@ const produits = [
           nom.textContent = produit.nom;
 
           const prix = document.createElement("div");
-          prix.textContent = produit.prix + " CFP";
+          prix.textContent = produit.prix + " CFP HT";
 
           const input = document.createElement("input");
           input.type = "number";
@@ -148,15 +152,20 @@ const produits = [
     }
 
     function calculerTotal() {
-      let total = 0;
+      let totalHT = 0;
       const inputs = document.querySelectorAll(".quantity-input");
       inputs.forEach(input => {
      const id = parseInt(input.dataset.id);
 const produit = produits.find(p => p.id === id);
 const qte = parseInt(input.value || "0");
-total += qte * produit.prix;
+totalHT += qte * produit.prix;
       });
-      totalEl.textContent = "Total : " + total + " CFP";
+      const tva = Math.round(totalHT * 0.16);
+      const totalTTC = totalHT + tva;
+      totalEl.innerHTML =
+        "Total HT : " + totalHT + " CFP" +
+        "<br />TVA (16%) : " + tva + " CFP" +
+        "<br />TOTAL TTC : " + totalTTC + " CFP";
     }
 
     async function exportPDF() {
@@ -173,7 +182,7 @@ total += qte * produit.prix;
       doc.text('Client : ' + client, 10, y);
       y += 10;
 
-      let total = 0;
+      let totalHT = 0;
       const quantityInputs = document.querySelectorAll('.quantity-input');
       quantityInputs.forEach(input => {
   const quantity = parseInt(input.value) || 0;
@@ -181,8 +190,8 @@ total += qte * produit.prix;
     const id = parseInt(input.dataset.id);
     const produit = produits.find(p => p.id === id);
     const lineTotal = quantity * produit.prix;
-    total += lineTotal;
-  doc.text(`${produit.nom} x ${quantity} = ${lineTotal} CFP`, 10, y);
+    totalHT += lineTotal;
+  doc.text(`${produit.nom} x ${quantity} = ${lineTotal} CFP HT`, 10, y);
     y += 10;
     if (y > 280) {
       doc.addPage();
@@ -191,7 +200,11 @@ total += qte * produit.prix;
   }
 });
 
-      doc.text('Total : ' + total + ' CFP', 10, y + 10);
+      const tva = Math.round(totalHT * 0.16);
+      const totalTTC = totalHT + tva;
+      doc.text('Total HT : ' + totalHT + ' CFP', 10, y + 10);
+      doc.text('TVA (16%) : ' + tva + ' CFP', 10, y + 20);
+      doc.text('TOTAL TTC : ' + totalTTC + ' CFP', 10, y + 30);
       doc.save('commande_' + client.replace(/\s+/g, '_') + '.pdf');
     }
 function envoyerCommande() {
@@ -227,12 +240,15 @@ function envoyerCommande() {
 let email = "sarlcpie@gmail.com"; // Remplace par ton adresse email
 let sujet = "Commande de " + client;
 let corps = "Commande de : " + client + "\n\n";
-
 commande.forEach(item => {
-  corps += `${item.produit} x ${item.quantite} = ${item.quantite * item.prix} CFP\n`;
+  corps += `${item.produit} x ${item.quantite} = ${item.quantite * item.prix} CFP HT\n`;
 });
-
-corps += `\nTotal : ${commande.reduce((sum, item) => sum + item.quantite * item.prix, 0)} CFP`;
+const totalHT = commande.reduce((sum, item) => sum + item.quantite * item.prix, 0);
+const tva = Math.round(totalHT * 0.16);
+const totalTTC = totalHT + tva;
+corps += `\nTotal HT : ${totalHT} CFP`;
+corps += `\nTVA (16%) : ${tva} CFP`;
+corps += `\nTOTAL TTC : ${totalTTC} CFP`;
 
 let mailtoLink = `mailto:${email}?subject=${encodeURIComponent(sujet)}&body=${encodeURIComponent(corps)}`;
 window.location.href = mailtoLink;}
@@ -245,7 +261,7 @@ function exporterTexte() {
   }
 
   let texte = `Client : ${client}\n\n`;
-  let total = 0;
+  let totalHT = 0;
 
   const inputs = document.querySelectorAll('.quantity-input');
   inputs.forEach(input => {
@@ -254,12 +270,16 @@ function exporterTexte() {
       const id = parseInt(input.dataset.id);
       const produit = produits.find(p => p.id === id);
       const lineTotal = quantity * produit.prix;
-      total += lineTotal;
-      texte += `${produit.nom} x ${quantity} = ${lineTotal} CFP\n`;
+      totalHT += lineTotal;
+      texte += `${produit.nom} x ${quantity} = ${lineTotal} CFP HT\n`;
     }
   });
 
-  texte += `\nTotal : ${total} CFP`;
+  const tva = Math.round(totalHT * 0.16);
+  const totalTTC = totalHT + tva;
+  texte += `\nTotal HT : ${totalHT} CFP`;
+  texte += `\nTVA (16%) : ${tva} CFP`;
+  texte += `\nTOTAL TTC : ${totalTTC} CFP`;
 
   const blob = new Blob([texte], { type: 'text/plain' });
   const url = URL.createObjectURL(blob);
@@ -273,6 +293,7 @@ function exporterTexte() {
   URL.revokeObjectURL(url);
 }
     afficherProduits();
+    calculerTotal();
   </script>
 </body>
 </html>
