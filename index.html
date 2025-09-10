@@ -58,7 +58,6 @@
 <div class="export">
   <button onclick="exportPDF()">Exporter en PDF</button>
   <button onclick="envoyerCommande()">Envoyer la commande</button>
-  <button onclick="exporterTexte()">Exporter en .txt</button>
 </div>
 
 <script>
@@ -193,12 +192,89 @@ function calculerTotal() {
     "<br />TVA (16%) : " + tva + " CFP" +
     "<br />TOTAL TTC : " + totalTTC + " CFP";
 }
+async function exportPDF() {
+      const client = document.getElementById('client').value;
+      if (!client) {
+        alert('Veuillez sélectionner un client.');
+        return;
+      }
 
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      let y = 10;
+      doc.text('Client : ' + client, 10, y);
+      y += 10;
+
+      let total = 0;
+      const quantityInputs = document.querySelectorAll('.quantity-input');
+      quantityInputs.forEach(input => {
+    const quantity = parseInt(input.value) || 0;
+    if (quantity > 0) {
+      const id = parseInt(input.dataset.id);
+      const produit = produits.find(p => p.id === id);
+      const lineTotal = quantity * produit.prix;
+      total += lineTotal;
+    doc.text(`${produit.nom} x ${quantity} = ${lineTotal} CFP`, 10, y);
+      y += 10;
+      if (y > 280) {
+        doc.addPage();
+        y = 10;
+      }
+    }
+  });
+
+      doc.text('Total : ' + total + ' CFP', 10, y + 10);
+      doc.save('commande_' + client.replace(/\s+/g, '_') + '.pdf');
+    }
+ function envoyerCommande() {
+    const client = document.getElementById('client').value;
+    if (!client) {
+      alert('Veuillez sélectionner un client.');
+      return;
+    }
+
+    const commande = [];
+    const inputs = document.querySelectorAll(".quantity-input");
+
+    inputs.forEach(input => {
+      const quantity = parseInt(input.value) || 0;
+      if (quantity > 0) {
+        const id = parseInt(input.dataset.id);
+        const produit = produits.find(p => p.id === id);
+        if (produit) {
+          commande.push({
+            produit: produit.nom,
+            quantite: quantity,
+            prix: produit.prix
+          });
+        }
+      }
+    });
+
+    if (commande.length === 0) {
+      alert("Aucun produit sélectionné.");
+      return;
+    }
+
+  let email = "tiisouvenirs@gmail.com"; // Remplace par ton adresse email
+  let sujet = "Commande de " + client;
+  let corps = "Commande de : " + client + "\n\n";
+
+  commande.forEach(item => {
+    corps += `${item.produit} x ${item.quantite} = ${item.quantite * item.prix} CFP\n`;
+  });
+
+  corps += `\nTotal : ${commande.reduce((sum, item) => sum + item.quantite * item.prix, 0)} CFP`;
+
+  let mailtoLink = `mailto:${email}?subject=${encodeURIComponent(sujet)}&body=${encodeURIComponent(corps)}`;
+  window.location.href = mailtoLink;}
 afficherProduits();
 calculerTotal();
 </script>
 </body>
 </html>
+
 
 
 
