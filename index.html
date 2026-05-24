@@ -100,13 +100,52 @@ function afficherProduits() {
     titre.textContent = categorie;
     section.appendChild(titre);
 
-    // Image bannière sous le titre Boîtes de shooters
-    if (categorie === "Boîtes de shooters") {
+   // Bannière spécifique
+if (categorie === "Boîtes de shooters") {
   const banner = document.createElement("img");
-  banner.src = "images/shot-banner-box.png"; // ← adaptez le nom du fichier
+  banner.src = "images/shot-banner-box.png";
   banner.alt = "Boîtes de shooters";
-  banner.style.cssText = "display:block; max-width:600px; width:100%; margin:10px auto 20px; border-radius:8px;";
+
+  banner.style.cssText = `
+    display:block;
+    max-width:600px;
+    width:100%;
+    margin:10px auto 20px;
+    border-radius:8px;
+  `;
+
   section.appendChild(banner);
+}
+
+// Affichage des tarifs
+const regleGros = tarifsGros[categorie];
+
+if (regleGros) {
+
+  // Recherche du prix normal
+  const prixNormal = liste[0].prix;
+
+  const tarifBox = document.createElement("div");
+
+  tarifBox.innerHTML = `
+    <strong>Prix unitaire :</strong> ${prixNormal} CFP HT<br>
+    <strong>Tarif de gros :</strong> ${regleGros.prix} CFP HT
+    à partir de ${regleGros.seuil} unités
+  `;
+
+  tarifBox.style.cssText = `
+    max-width:500px;
+    margin:0 auto 20px;
+    padding:12px;
+    background:#f5f5f5;
+    border:1px solid #ddd;
+    border-radius:10px;
+    text-align:center;
+    font-size:16px;
+    line-height:1.5;
+  `;
+
+  section.appendChild(tarifBox);
 }
 
     const zone = document.createElement("div");
