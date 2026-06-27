@@ -219,38 +219,6 @@ async function exportPDF() {
   doc.text(`Total HT : ${totalHT} CFP`, 10, y); y += 8;
   doc.text(`TVA (16%) : ${tva} CFP`, 10, y); y += 8;
   doc.text(`TOTAL TTC : ${totalTTC} CFP`, 10, y);
-
-  // ── Récap par catégorie ──────────────────────────────────────────
-  y += 14;
-  if (y > 260) { doc.addPage(); y = 12; }
-  doc.setFontSize(13);
-  doc.text('Récapitulatif par catégorie :', 10, y); y += 8;
-  doc.setFontSize(11);
-
-  const categoriesRecap = {};
-  lignes.forEach(l => {
-    if (!categoriesRecap[l.categorie]) {
-      categoriesRecap[l.categorie] = { qte: 0, prixUnitaire: l.prixApplique, total: 0 };
-    }
-    categoriesRecap[l.categorie].qte   += l.qte;
-    categoriesRecap[l.categorie].total += l.totalLigne;
-  });
-
-  const ordre = ['Décapsuleurs', 'Dessous de verre', 'Dessous de plat', 'Miroirs', 'Boîtes de shooters', 'Stickers'];
-  ordre.forEach(cat => {
-    if (!categoriesRecap[cat]) return;
-    const r = categoriesRecap[cat];
-    const tvaCat = Math.round(r.total * TVA_TAUX);
-    const ttcCat = r.total + tvaCat;
-    if (y > 260) { doc.addPage(); y = 12; }
-    doc.setFont(undefined, 'bold');
-    doc.text(cat, 10, y); y += 7;
-    doc.setFont(undefined, 'normal');
-    doc.text(`  Quantité : ${r.qte}  |  PU : ${r.prixUnitaire} CFP HT`, 10, y); y += 6;
-    doc.text(`  Total HT : ${r.total} CFP  |  TVA : ${tvaCat} CFP  |  TTC : ${ttcCat} CFP`, 10, y); y += 9;
-  });
-  // ────────────────────────────────────────────────────────────────
-
   doc.save('commande_' + client.replace(/\s+/g, '_') + '.pdf');
 }
 
