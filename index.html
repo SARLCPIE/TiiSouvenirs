@@ -11,6 +11,9 @@
     .produits { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
     .produit { border: 1px solid #ccc; border-radius: 8px; padding: 10px; width: 180px; text-align: center; }
     .produit img { width: 100%; height: auto; }
+    .produit.rupture { opacity: 0.6; }
+    .stock-info { font-size: 12px; color: #666; margin-top: 4px; }
+    .stock-info.epuise { color: #c0392b; font-weight: bold; }
     .client-select, .total, .export { text-align: center; margin-top: 20px; }
     .total { font-weight: bold; }
     .note { text-align:center; font-size:12px; color:#555; margin-top:6px; }
@@ -47,10 +50,10 @@ const produits = [
   { id: 5, nom: "Bo Pc Rai", prix: 345, image: "images/bo-pc-rai.png", categorie: "Décapsuleurs" },
   { id: 6, nom: "Bo Pc Tor", prix: 345, image: "images/bo-pc-tor.png", categorie: "Décapsuleurs" },
   // stock au 23/7 : 506 drapeaux, 255 hibiscus, 259 tortues, 248 raies; plat 153 drapeaux
-  { id: 7, nom: "COA LEZ (stock = 49)", prix: 95, image: "images/coa-lez.png", categorie: "Dessous de verre" },
+  { id: 7, nom: "COA LEZ (stock = 43)", prix: 95, image: "images/coa-lez.png", categorie: "Dessous de verre" },
   { id: 8, nom: "COA FLAG", prix: 95, image: "images/coa-flag.png", categorie: "Dessous de verre" },
   { id: 9, nom: "COA HIB", prix: 95, image: "images/coa-hib.png", categorie: "Dessous de verre" },
-  { id: 10, nom: "COA PAT (stock = 6)", prix: 95, image: "images/coa-pat.png", categorie: "Dessous de verre" },
+  { id: 10, nom: "COA PAT (stock = 2)", prix: 95, image: "images/coa-pat.png", categorie: "Dessous de verre" },
   { id: 11, nom: "COA RAI", prix: 95, image: "images/coa-rai.png", categorie: "Dessous de verre" },
   { id: 12, nom: "COA TOR", prix: 95, image: "images/coa-tor.png", categorie: "Dessous de verre" },
   { id: 13, nom: "COAB FLAG ", prix: 430, image: "images/coa-flag.png", categorie: "Dessous de plat" },
@@ -67,6 +70,20 @@ const produits = [
   { id: 24, nom: "Plaque divers (23x25 cm)", prix: 500, image: "images/sticker-plaque-divers.png", categorie: "Stickers" },
   { id: 25, nom: "Pack 50 stickers", prix: 4000, image: "images/sticker-pack-50.png", categorie: "Stickers" }
 ];
+
+// Détecte automatiquement une mention "(stock = N)" (insensible à la casse) dans le nom d'un produit.
+// Si trouvée : produit.stock = N et produit.nomAffiche = nom nettoyé de cette mention.
+// Si absente : pas de stock défini => pas de vérification pour ce produit.
+const REGEX_STOCK = /\(\s*stock\s*=\s*(\d+)\s*\)/i;
+produits.forEach(p => {
+  const match = p.nom.match(REGEX_STOCK);
+  if (match) {
+    p.stock = parseInt(match[1]);
+    p.nomAffiche = p.nom.replace(REGEX_STOCK, "").replace(/\s+/g, " ").trim();
+  } else {
+    p.nomAffiche = p.nom.trim();
+  }
+});
 
 const tarifsGros = {
   "Décapsuleurs":       { seuil: 50,  prix: 310 },
@@ -120,24 +137,50 @@ function afficherProduits() {
     liste.forEach((produit) => {
       const div = document.createElement("div");
       div.className = "produit";
+
+      const hasStock = typeof produit.stock === "number";
+      if (hasStock && produit.stock <= 0) div.classList.add("rupture");
+
       const img = document.createElement("img");
       img.src = produit.image;
       img.alt = produit.nom;
       const nom = document.createElement("div");
-      nom.textContent = produit.nom;
+      nom.textContent = produit.nomAffiche;
       const prix = document.createElement("div");
       prix.textContent = produit.prix + " CFP HT";
+
       const input = document.createElement("input");
       input.type = "number";
       input.min = "0";
       input.value = "0";
       input.className = "quantity-input";
       input.dataset.id = produit.id;
-      input.addEventListener("input", () => majAffichage());
+
+      if (hasStock) {
+        input.max = produit.stock;
+        input.dataset.stock = produit.stock;
+        if (produit.stock <= 0) input.disabled = true;
+      }
+
+      input.addEventListener("input", () => {
+        verifierStock(input);
+        majAffichage();
+      });
+
       div.appendChild(img);
       div.appendChild(nom);
       div.appendChild(prix);
       div.appendChild(input);
+
+      if (hasStock) {
+        const stockInfo = document.createElement("div");
+        stockInfo.className = "stock-info" + (produit.stock <= 0 ? " epuise" : "");
+        stockInfo.textContent = produit.stock > 0
+          ? `Stock disponible : ${produit.stock}`
+          : "Rupture de stock";
+        div.appendChild(stockInfo);
+      }
+
       zone.appendChild(div);
     });
 
@@ -146,9 +189,24 @@ function afficherProduits() {
   }
 }
 
+// Empêche de saisir une quantité supérieure au stock disponible (quand un stock est précisé)
+function verifierStock(input) {
+  if (input.dataset.stock === undefined) return;
+  const stock = parseInt(input.dataset.stock);
+  let val = parseInt(input.value || "0");
+  if (isNaN(val) || val < 0) val = 0;
+  if (val > stock) {
+    val = stock;
+    const produit = produits.find(p => p.id == input.dataset.id);
+    alert(`Stock insuffisant pour "${produit ? produit.nomAffiche : 'ce produit'}" : seulement ${stock} unité(s) disponible(s).`);
+  }
+  input.value = val;
+}
+
 function lirePanier() {
   const cart = [];
   document.querySelectorAll(".quantity-input").forEach(input => {
+    verifierStock(input); // sécurité supplémentaire avant lecture du panier
     const qte = parseInt(input.value || "0");
     if (qte > 0) {
       const produit = produits.find(p => p.id == input.dataset.id);
@@ -177,7 +235,7 @@ function appliquerPrix(cart) {
       prixUnitaire = regle.prix;
     }
     const totalLigne = qte * prixUnitaire;
-    return { id: produit.id, nom: produit.nom, categorie: produit.categorie, qte, prixBase: produit.prix, prixApplique: prixUnitaire, totalLigne };
+    return { id: produit.id, nom: produit.nomAffiche, categorie: produit.categorie, qte, prixBase: produit.prix, prixApplique: prixUnitaire, totalLigne };
   });
 }
 
@@ -195,7 +253,8 @@ function majAffichage() {
   totalEl.innerHTML =
     "Total HT : " + totaux.totalHT + " CFP" +
     "<br />TVA (16%) : " + totaux.tva + " CFP" +
-    "<br />TOTAL TTC : " + totaux.totalTTC + " CFP";
+    "<br />TOTAL TTC : " + totaux.totalTTC + " CFP" +
+    '<div class="note">Les tarifs de gros se déclenchent par catégorie lorsque le seuil de quantité est atteint.</div>';
 }
 
 async function exportPDF() {
