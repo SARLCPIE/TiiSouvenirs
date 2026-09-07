@@ -129,7 +129,6 @@
       border-radius: 8px;
     }
   </style>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
   <h1>Commande Souvenirs</h1>
@@ -148,7 +147,6 @@
   </div>
 
   <div class="export">
-    <button onclick="exportPDF()">Exporter en PDF</button>
     <button onclick="envoyerCommande()">Envoyer la commande</button>
   </div>
 
@@ -188,12 +186,7 @@ const produits = [
   { id: 32, nom: "Sticker Coloré Baleine (13x8 cm)(stock = 0)", prix: 300, image: "images/stick-bal-graph.png", categorie: "Stickers" },
   { id: 33, nom: "Sticker Coloré Tortue (13x9 cm)(stock = 0)", prix: 300, image: "images/stick-tor-graph.png", categorie: "Stickers" },
   { id: 34, nom: "Sticker Coloré Raie(11x9 cm)(stock = 0)", prix: 300, image: "images/stick-rai-graph.png", categorie: "Stickers" },
-  { id: 35, nom: "Sticker Coloré Requin (14x8 cm)(stock = 0)", prix: 300, image: "images/stick-req-graph.png", categorie: "Stickers" },
-  { id: 36, nom: "Sticker Requin ", prix: 300, image: "images/sticker-requin.png", categorie: "Stickers" },
-  { id: 37, nom: "Sticker Tortue (18x15 cm)", prix: 300, image: "images/sticker-tortue.png", categorie: "Stickers" },
-  { id: 38, nom: "Sticker Manta (13x18 cm)", prix: 300, image: "images/sticker-manta.png", categorie: "Stickers" },
-  { id: 39, nom: "Plaque divers (23x25 cm)", prix: 500, image: "images/sticker-plaque-divers.png", categorie: "Stickers" },
-  { id: 40, nom: "Pack 50 stickers", prix: 4000, image: "images/sticker-pack-50.png", categorie: "Stickers" }
+  { id: 35, nom: "Sticker Coloré Requin (14x8 cm)(stock = 0)", prix: 300, image: "images/stick-req-graph.png", categorie: "Stickers" }
 ];
 
 // Détecte automatiquement une mention "(stock = N)" (insensible à la casse) dans le nom d'un produit.
@@ -222,6 +215,9 @@ const tarifsGros = {
 const TVA_TAUX = 0.16;
 const container = document.getElementById("produitsContainer");
 const totalEl = document.getElementById("total");
+
+// URL du Worker Cloudflare qui sert de pont vers Dolibarr
+const URL_PONT_DOLIBARR = "https://fragrant-hall-2132.tiisouvenirs.workers.dev";
 
 function afficherProduits() {
   const categories = {};
@@ -412,38 +408,60 @@ function majAffichage() {
     '<div class="note">Les tarifs de gros se déclenchent par catégorie lorsque le seuil de quantité est atteint.</div>';
 }
 
-async function exportPDF() {
+// ============================================================
+// Envoi de la commande :
+// 1) Crée le devis dans Dolibarr via le Worker Cloudflare
+// 2) Ouvre le mailto habituel vers le client
+// ============================================================
+async function envoyerCommande() {
   const client = document.getElementById('client').value.trim();
   if (!client) { alert('Veuillez saisir un client.'); return; }
-  const cart = lirePanier();
-  if (cart.length === 0) { alert('Aucun produit sélectionné.'); return; }
-  const lignes = appliquerPrix(cart);
-  const { totalHT, tva, totalTTC } = calculerTotaux(lignes);
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  let y = 12;
-  doc.text('Client : ' + client, 10, y); y += 8;
-  doc.text('Date : ' + new Date().toLocaleString('fr-FR'), 10, y); y += 10;
-  doc.text('Détails de la commande :', 10, y); y += 8;
-  lignes.forEach(l => {
-    doc.text(`${l.nom} — Qté ${l.qte} — PU ${l.prixApplique} CFP — Total ${l.totalLigne} CFP`, 10, y);
-    y += 8;
-    if (y > 280) { doc.addPage(); y = 12; }
-  });
-  y += 4;
-  doc.text(`Total HT : ${totalHT} CFP`, 10, y); y += 8;
-  doc.text(`TVA (16%) : ${tva} CFP`, 10, y); y += 8;
-  doc.text(`TOTAL TTC : ${totalTTC} CFP`, 10, y);
-  doc.save('commande_' + client.replace(/\s+/g, '_') + '.pdf');
-}
 
-function envoyerCommande() {
-  const client = document.getElementById('client').value.trim();
-  if (!client) { alert('Veuillez saisir un client.'); return; }
   const cart = lirePanier();
   if (cart.length === 0) { alert('Aucun produit sélectionné.'); return; }
+
   const lignes = appliquerPrix(cart);
   const { totalHT, tva, totalTTC } = calculerTotaux(lignes);
+
+  // --- 1) Création du devis dans Dolibarr via le Worker ---
+  const cartPourPont = cart.map(({ produit, qte }) => ({
+    id: produit.id,
+    nom: produit.nomAffiche,
+    prix: produit.prix,
+    qte: qte
+  }));
+
+  const bouton = document.querySelector('.export button');
+  const texteOriginal = bouton ? bouton.textContent : null;
+  if (bouton) { bouton.disabled = true; bouton.textContent = "Envoi en cours..."; }
+
+  try {
+    const reponse = await fetch(URL_PONT_DOLIBARR, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ client, cart: cartPourPont })
+    });
+
+    const resultat = await reponse.json();
+
+    if (!reponse.ok || resultat.error) {
+      alert("Le devis Dolibarr n'a pas pu être créé automatiquement (" +
+            (resultat.error || "erreur inconnue") +
+            "). La commande va quand même être envoyée par email, pense à créer le devis manuellement si besoin.");
+    } else if (resultat.lignesEnErreur && resultat.lignesEnErreur.length > 0) {
+      alert("Devis créé (n°" + resultat.propalId + ") mais certaines références n'ont pas pu être ajoutées : " +
+            resultat.lignesEnErreur.join(", ") + "\nÀ compléter manuellement dans Dolibarr.");
+    }
+    // Si tout est OK, pas d'alerte bloquante : on enchaîne directement sur l'email.
+
+  } catch (erreur) {
+    alert("Impossible de contacter le serveur pour créer le devis Dolibarr (" + erreur.message +
+          "). La commande va quand même être envoyée par email.");
+  } finally {
+    if (bouton) { bouton.disabled = false; bouton.textContent = texteOriginal; }
+  }
+
+  // --- 2) Envoi de l'email au client, comme avant ---
   let corps = `Commande de : ${client}\nDate : ${new Date().toLocaleString('fr-FR')}\n\nDétails :\n`;
   lignes.forEach(l => {
     corps += `${l.nom} x ${l.qte} — PU ${l.prixApplique} CFP — Ligne ${l.totalLigne} CFP\n`;
