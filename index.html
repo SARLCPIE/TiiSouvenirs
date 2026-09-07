@@ -91,11 +91,6 @@
       border: 1px solid red;
       background: #ffecec;
     }
-    .qty-error-msg {
-      color: red;
-      font-size: 0.75em;
-      display: none;
-    }
     .client-select, .total, .export {
       text-align: center;
       margin-top: 20px;
@@ -103,32 +98,8 @@
     .total {
       font-weight: bold;
     }
-    .note {
-      text-align: center;
-      font-size: 12px;
-      color: #555;
-      margin-top: 6px;
-      font-weight: normal;
-    }
-    .tarif-box {
-      max-width: 500px;
-      margin: 0 auto 20px;
-      padding: 12px;
-      background: #f5f5f5;
-      border: 1px solid #ddd;
-      border-radius: 10px;
-      text-align: center;
-      font-size: 16px;
-      line-height: 1.5;
-    }
-    .banner-categorie {
-      display: block;
-      max-width: 600px;
-      width: 100%;
-      margin: 10px auto 20px;
-      border-radius: 8px;
-    }
   </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
   <h1>Commande Souvenirs</h1>
@@ -138,341 +109,408 @@
   </div>
 
   <div id="produitsContainer"></div>
-
-  <div class="total" id="total">
-    Total HT : 0 CFP
-    <br />TVA (16%) : 0 CFP
-    <br />TOTAL TTC : 0 CFP
-    <div class="note">Les tarifs de gros se déclenchent par catégorie lorsque le seuil de quantité est atteint.</div>
-  </div>
-
+  <div class="total" id="total">Total : 0 CFP</div>
   <div class="export">
+    <button onclick="exportPDF()">Exporter en PDF</button>
     <button onclick="envoyerCommande()">Envoyer la commande</button>
   </div>
 
-<script>
-const produits = [
-  { id: 1, nom: "Bo Mag Flag", prix: 345, image: "images/bo-mag-flag.png", categorie: "Décapsuleurs" },
-  { id: 2, nom: "Bo Mag Rai", prix: 345, image: "images/bo-mag-rai.png", categorie: "Décapsuleurs" },
-  { id: 3, nom: "Bo Mag Tor", prix: 345, image: "images/bo-mag-tor.png", categorie: "Décapsuleurs" },
-  { id: 4, nom: "Bo Pc Flag", prix: 345, image: "images/bo-pc-flag.png", categorie: "Décapsuleurs" },
-  { id: 5, nom: "Bo Pc Rai", prix: 345, image: "images/bo-pc-rai.png", categorie: "Décapsuleurs" },
-  { id: 6, nom: "Bo Pc Tor", prix: 345, image: "images/bo-pc-tor.png", categorie: "Décapsuleurs" },
-//  { id: 7, nom: "Remag baleine (stock = 0)", prix: 300, image: "images/Remag-baleine.png", categorie: "Magnets résine" },
-//  { id: 8, nom: "Remag tortue tiki (stock = 0)", prix: 300, image: "images/Remag-tortuetiki.png", categorie: "Magnets résine" },
-//  { id: 9, nom: "Remag tiki (stock = 0)", prix: 300, image: "images/Remag-tiki.png", categorie: "Magnets résine" },
-//  { id: 10, nom: "Remag vaa (stock = 0)", prix: 300, image: "images/Remag-vaa.png", categorie: "Magnets résine" },
-//  { id: 11, nom: "Remag vahine 1 (stock = 1)", prix: 300, image: "images/Remag-vahine1.png", categorie: "Magnets résine" },
-//  { id: 12, nom: "Remag vahine 2 (stock = 0)", prix: 300, image: "images/Remag-vahine2.png", categorie: "Magnets résine" },
-//  { id: 13, nom: "Remag drapeau (stock = 0)", prix: 300, image: "images/Remag-drapeau.png", categorie: "Magnets résine" },
-//  { id: 14, nom: "Remag piece (stock = 0)", prix: 300, image: "images/Remag-piece.png", categorie: "Magnets résine" },
-  { id: 15, nom: "COA LEZ (stock = 43)", prix: 95, image: "images/coa-lez.png", categorie: "Dessous de verre" },
-  { id: 16, nom: "COA FLAG", prix: 95, image: "images/coa-flag.png", categorie: "Dessous de verre" },
-  { id: 17, nom: "COA HIB", prix: 95, image: "images/coa-hib.png", categorie: "Dessous de verre" },
-  { id: 18, nom: "COA PAT (stock = 2)", prix: 95, image: "images/coa-pat.png", categorie: "Dessous de verre" },
-  { id: 19, nom: "COA RAI", prix: 95, image: "images/coa-rai.png", categorie: "Dessous de verre" },
-  { id: 20, nom: "COA TOR", prix: 95, image: "images/coa-tor.png", categorie: "Dessous de verre" },
-  { id: 21, nom: "COA VAH (Stock = 0)", prix: 95, image: "images/coa-vah.png", categorie: "Dessous de verre" },
-  { id: 22, nom: "COA BAL (Stock = 0)", prix: 95, image: "images/coa-bal.png", categorie: "Dessous de verre" },
-  { id: 23, nom: "COAB FLAG ", prix: 430, image: "images/coa-flag.png", categorie: "Dessous de plat" },
-  { id: 24, nom: "COAB RAI (Stock = 0)", prix: 430, image: "images/coa-rai.png", categorie: "Dessous de plat" },
-  { id: 25, nom: "COAB TOR (Stock = 66)", prix: 430, image: "images/coa-tor.png", categorie: "Dessous de plat" },
-  { id: 26, nom: "Mir Comp Flag", prix: 345, image: "images/mir-comp-flag.png", categorie: "Miroirs" },
-  { id: 27, nom: "Mir Comp Hib", prix: 345, image: "images/mir-comp-hib.png", categorie: "Miroirs" },
-  { id: 28, nom: "Mir Comp Rai", prix: 345, image: "images/mir-comp-rai.png", categorie: "Miroirs" },
-  { id: 29, nom: "Mir Comp Tor", prix: 345, image: "images/mir-comp-tor.png", categorie: "Miroirs" },
-  { id: 30, nom: "Shot Box 1 (Lezard-Tortue01-Raie)", prix: 520, image: "images/shot-box-1.png", categorie: "Boîtes de shooters" },
-  { id: 31, nom: "Shot Box 2 (Hibiscus-Tortue02-Drapeau)", prix: 520, image: "images/shot-box-2.png", categorie: "Boîtes de shooters" },
-  { id: 32, nom: "Sticker Coloré Baleine (13x8 cm)(stock = 0)", prix: 300, image: "images/stick-bal-graph.png", categorie: "Stickers" },
-  { id: 33, nom: "Sticker Coloré Tortue (13x9 cm)(stock = 0)", prix: 300, image: "images/stick-tor-graph.png", categorie: "Stickers" },
-  { id: 34, nom: "Sticker Coloré Raie(11x9 cm)(stock = 0)", prix: 300, image: "images/stick-rai-graph.png", categorie: "Stickers" },
-  { id: 35, nom: "Sticker Coloré Requin (14x8 cm)(stock = 0)", prix: 300, image: "images/stick-req-graph.png", categorie: "Stickers" }
-];
+  <script>
+    const produits = [
+      { id: 1, nom: "Ban01s (Stock = 29)", prix: 120, image: "images/ban01s.png", categorie: "Stickers" },
+      { id: 2, nom: "Ban 01M", prix: 400, image: "images/ban01s.png", categorie: "Stickers" },
+      { id: 3, nom: "Lez02s", prix: 120, image: "images/lez02s.png", categorie: "Stickers" },
+      { id: 4, nom: "Lez02M", prix: 400, image: "images/lez02s.png", categorie: "Stickers" },
+      { id: 5, nom: "Tor03s(Art0038)", prix: 120, image: "images/tor03s-art0038.png", categorie: "Stickers" },
+      { id: 6, nom: "Tor03m(Art0039)", prix: 400, image: "images/art0039-tor03m.png", categorie: "Stickers" },
+      { id: 7, nom: "Art0036 (RAI03s)", prix: 120, image: "images/art0036-rai03s.png", categorie: "Stickers" },
+      { id: 8, nom: "ART0037 (RAI03M)", prix: 400, image: "images/art0037-rai03m.png", categorie: "Stickers" },
+      { id: 9, nom: "Hib01nM", prix: 400, image: "images/hib01sn.png", categorie: "Stickers" },
+      { id: 10, nom: "Hib01rM", prix: 400, image: "images/hib01sr.png", categorie: "Stickers" },
+      { id: 11, nom: "Fle01s", prix: 120, image: "images/fle01s.png", categorie: "Stickers" },
+      { id: 12, nom: "Fle01M (Stock = 38)", prix: 400, image: "images/fle01s.png", categorie: "Stickers" },
+      { id: 13, nom: "Cag01s", prix: 120, image: "images/cag01s.png", categorie: "Stickers" },
+      { id: 14, nom: "Pla02M", prix: 400, image: "images/pla02m.png", categorie: "Stickers" },
+      { id: 15, nom: "Pla03M", prix: 400, image: "images/pla03m.png", categorie: "Stickers" },
+      { id: 16, nom: "Sc Cag01", prix: 250, image: "images/sc-cag01.png", categorie: "Stickers" },
+      { id: 17, nom: "Sc Cag02 (Stock = 8)", prix: 250, image: "images/sc-cag02.png", categorie: "Stickers" },
+      { id: 18, nom: "Sc BAL01", prix: 250, image: "images/sc-bal01.png", categorie: "Stickers" },
+      { id: 19, nom: "Sc RASC", prix: 250, image: "images/sc-rasc.png", categorie: "Stickers" },
+      { id: 20, nom: "Sc Nau01", prix: 250, image: "images/sc-nau01.png", categorie: "Stickers" },
+      { id: 21, nom: "Sc Ray01", prix: 250, image: "images/sc-ray01.png", categorie: "Stickers" },
+      { id: 22, nom: "Sc Fle01", prix: 250, image: "images/sc-fle01.png", categorie: "Stickers" },
+      { id: 23, nom: "SCG CAG01", prix: 250, image: "images/scg-cag01.png", categorie: "Stickers" },
+      { id: 24, nom: "SCG RAY01", prix: 250, image: "images/scg-ray01.png", categorie: "Stickers" },
+      { id: 25, nom: "SCG TOR01", prix: 250, image: "images/scg-tor01.png", categorie: "Stickers" },
+      { id: 26, nom: "SC TOR01", prix: 250, image: "images/sc-tor01.png", categorie: "Stickers" },
+      { id: 28, nom: "01(LEZ02)(Stock = 0)", prix: 50, image: "images/01-lez02.png", categorie: "Tatouages" },
+      { id: 29, nom: "02 (RAI01)", prix: 50, image: "images/02-rai01.png", categorie: "Tatouages" },
+      { id: 30, nom: "03 (TOR02)", prix: 50, image: "images/03-tor02.png", categorie: "Tatouages" },
+      { id: 31, nom: "07 (RAI03)(Stock = 0)", prix: 50, image: "images/07-rai03.png", categorie: "Tatouages" },
+      { id: 32, nom: "09 (LEZ01)(Stock = 0)", prix: 50, image: "images/09-lez01.png", categorie: "Tatouages" },
+      { id: 33, nom: "10 (TOR03)", prix: 50, image: "images/10-tor03.png", categorie: "Tatouages" },
+      { id: 34, nom: "11 (NAU)", prix: 50, image: "images/11-nau.png", categorie: "Tatouages" },
+      { id: 35, nom: "12 (REQ)", prix: 50, image: "images/12-req.png", categorie: "Tatouages" },
+      { id: 36, nom: "16 (COL TOR) (Stock = 32)", prix: 50, image: "images/16-col-tor.png", categorie: "Tatouages" },
+      { id: 37, nom: "17 (COL DAU)", prix: 50, image: "images/17-col-dau.png", categorie: "Tatouages" },
+      { id: 38, nom: "ART0101 (BO PC TOR3)", prix: 350, image: "images/art0101-bo-pc-tor3.png", categorie: "Décapsuleurs" },
+      { id: 39, nom: "ART0102 (BO PC RAI03)", prix: 350, image: "images/art0102-bo-pc-rai03.png", categorie: "Décapsuleurs" },
+      { id: 41, nom: "ART0126(BO PC HIB)", prix: 350, image: "images/art0108-bo-pc-hib.png", categorie: "Décapsuleurs" },
+      { id: 42, nom: "ART0117 (BO PC MAP)", prix: 350, image: "images/art0117-bo-pc-map.png", categorie: "Décapsuleurs" },
+      { id: 43, nom: "ART0108 (BO PC CAG01)", prix: 350, image: "images/art0102-bo-pc-cag01.png", categorie: "Décapsuleurs" },
+      { id: 44, nom: "ART099 (BO MAG TOR03)", prix: 350, image: "images/art099-bo-mag-tor03.png", categorie: "Décapsuleurs" },
+      { id: 45, nom: "ART0100(BO MAG RAI03)", prix: 350, image: "images/art0114-bo-mag-rai03.png", categorie: "Décapsuleurs" },
+      { id: 46, nom: "ART0125(BO MAG HIB)", prix: 350, image: "images/art0125-bo-mag-hib.png", categorie: "Décapsuleurs" },
+      { id: 47, nom: "ART0118(BO MAG MAP)", prix: 350, image: "images/art0118-bo-mag-map.png", categorie: "Décapsuleurs" },
+      { id: 48, nom: "DECRO-MAG CAG1 (Stock = 62)", prix: 350, image: "images/decro-mag-cag1.png", categorie: "Décapsuleurs" },
+      { id: 49, nom: "DECRO-MAG RAI03 (Stock = 16)", prix: 350, image: "images/decro-mag-rai03.png", categorie: "Décapsuleurs" },
+      { id: 50, nom: "REMAG BO CAG01", prix: 300, image: "images/remag-bo-cag01.png", categorie: "Décapsuleurs" },
+      { id: 51, nom: "COA-FLE01", prix: 100, image: "images/coa-fle01.png", categorie: "Coasters" },
+      { id: 52, nom: "COA-HIB02 (Stock = 0)", prix: 100, image: "images/coa-hib02.png", categorie: "Coasters" },
+      { id: 52, nom: "COA-TOR04 (Stock = 0)", prix: 100, image: "images/coa-tor04.png", categorie: "Coasters" },
+      { id: 54, nom: "COA-RAI03", prix: 100, image: "images/coa-rai03.png", categorie: "Coasters" },
+      { id: 55, nom: "COA-CAG01", prix: 100, image: "images/coa-cag01.png", categorie: "Coasters" },
+      { id: 56, nom: "COA-PAT01", prix: 100, image: "images/coa-pat01.png", categorie: "Coasters" },
+      { id: 57, nom: "COA-PAT02", prix: 100, image: "images/coa-pat02.png", categorie: "Coasters" },
+      { id: 58, nom: "COA-CAG02 (Stock = 0)", prix: 100, image: "images/coa-cag02.png", categorie: "Coasters" },
+      { id: 59, nom: "COA-PIECE", prix: 100, image: "images/coa-piece.png", categorie: "Coasters" },
+      { id: 60, nom: "COA-CAS02", prix: 100, image: "images/coa-cas02.png", categorie: "Coasters" },
+      { id: 61, nom: "COA-NAU02", prix: 100, image: "images/coa-nau02.png", categorie: "Coasters" },
+      { id: 61, nom: "COA-TOR03 (Stock = 0) ", prix: 100, image: "images/coa-tor03.png", categorie: "Coasters" }, 
+      { id: 63, nom: "COA-FLE02", prix: 100, image: "images/coa-fle02.png", categorie: "Coasters" },
+      { id: 64, nom: "Set coasters bois", prix: 1200, image: "images/set-coasters-bois.png", categorie: "Coasters" },
+      { id: 65, nom: "COAB CAG01 (Stock = 18)", prix: 500, image: "images/coa-cag01.png", categorie: "Dessous de plat" },
+      { id: 66, nom: "COAB TOR03", prix: 500, image: "images/coab-tor03.png", categorie: "Dessous de plat" },
+      { id: 67, nom: "COAB RAI03", prix: 500, image: "images/coab-rai03.png", categorie: "Dessous de plat" },
+      { id: 68, nom: "COAB CAG02", prix: 500, image: "images/coa-cag02.png", categorie: "Dessous de plat" },
+      { id: 69, nom: "ART0104 (compact Tor03)", prix: 300, image: "images/art0104-compact-tor03.png", categorie: "Miroirs" },
+      { id: 70, nom: "ART0113 (Coeur RAI03)", prix: 300, image: "images/art0113-coeur-rai03.png", categorie: "Miroirs" },
+      { id: 71, nom: "ART0106 (Coeur TOR03)", prix: 300, image: "images/art0106-coeur-tor03.png", categorie: "Miroirs" },
+      { id: 72, nom: "ART0103 (Compact RAI03)", prix: 300, image: "images/art0103-compact-rai03.png", categorie: "Miroirs" },
+      { id: 73, nom: "ART0127 (Color turtle)", prix: 300, image: "images/art0127-color-turtle.png", categorie: "Miroirs" },
+      { id: 74, nom: "ART0128 (Color cagou)", prix: 300, image: "images/art0128-color-cagou.png", categorie: "Miroirs" },
+      { id: 75, nom: "ART0129 (Color Nautile)", prix: 300, image: "images/art0129-color-nautile.png", categorie: "Miroirs" },
+      { id: 77, nom: "EVE01", prix: 500, image: "images/eve01.png", categorie: "Eventails" },
+      { id: 78, nom: "EVE02", prix: 500, image: "images/eve02.png", categorie: "Eventails" },
+   //   { id: 79, nom: "EVE04 (Stock = 6)", prix: 500, image: "images/eve04.png", categorie: "Eventails" },
+      { id: 81, nom: "ART094 (pc bois TOR03)", prix: 250, image: "images/art094-pc-bois-tor03.png", categorie: "Porte clés" },
+      { id: 82, nom: "ART098 (pc bois CAG) (Stock = 13)", prix: 250, image: "images/art098-pc-bois-cag.png", categorie: "Porte clés" },
+      { id: 83, nom: "ART0110 (pc bois LEZ02)", prix: 250, image: "images/art0110-pc-bois-lez02.png", categorie: "Porte clés" },
+      { id: 84, nom: "ART0111 (pc bois TOR01) (Stock = 13)", prix: 250, image: "images/art0111-pc-bois-tor01.png", categorie: "Porte clés" },
+      { id: 85, nom: "PC DL FLE01", prix: 125, image: "images/pc-dl-fle01.png", categorie: "Porte clés" },
+      { id: 86, nom: "PC DL TOR03", prix: 125, image: "images/pc-dl-tor03.png", categorie: "Porte clés" },
+      { id: 87, nom: "PC DL RAI03", prix: 125, image: "images/pc-dl-rai03.png", categorie: "Porte clés" },
+      { id: 95, nom: "PCR11 (Stock = 24)", prix: 200, image: "images/pcr11.png", categorie: "Porte clés" },
+      { id: 97, nom: "PC TOR01", prix: 150, image: "images/pc-tor01.png", categorie: "Porte clés" },
+      { id: 98, nom: "PC TOR03", prix: 150, image: "images/pc-tor03.png", categorie: "Porte clés" },
+      { id: 99, nom: "PC RAI03", prix: 150, image: "images/pc-rai03.png", categorie: "Porte clés" },
+      { id: 100, nom: "PCM08 (Stock = 13)", prix: 250, image: "images/pcm08.png", categorie: "Porte clés" },
+      { id: 101, nom: "PCM12 (Stock = 2)", prix: 250, image: "images/pcm12.png", categorie: "Porte clés" },
+      { id: 102, nom: "ART0091(mag bois RAI03)", prix: 250, image: "images/art0091-mag-bois-rai03.png", categorie: "Magnets" },
+      { id: 103, nom: "ART0093(mag bois TOR03)", prix: 250, image: "images/art0093-mag-bois-tor03.png", categorie: "Magnets" },
+      { id: 104, nom: "Mag DL FLE01", prix: 125, image: "images/mag-dl-fle01.png", categorie: "Magnets" },
+      { id: 105, nom: "Mag DL TOR03", prix: 125, image: "images/mag-dl-tor03.png", categorie: "Magnets" },
+      { id: 106, nom: "Mag DL RAI03", prix: 125, image: "images/mag-dl-rai03.png", categorie: "Magnets" },
+      { id: 107, nom: "Mag DL RAI04", prix: 125, image: "images/mag-dl-rai04.png", categorie: "Magnets" },
+      { id: 108, nom: "Mag DL LEZ02", prix: 125, image: "images/mag-dl-lez02.png", categorie: "Magnets" },
+      { id: 109, nom: "Magnet métal cagou (MetM-CAG)", prix: 350, image: "images/metm-cag.png", categorie: "Magnets" },
+      { id: 110, nom: "Remag CAG01", prix: 250, image: "images/remag-cag01.png", categorie: "Magnets" },
+      { id: 111, nom: "Remag CAG02", prix: 250, image: "images/remag-cag02.png", categorie: "Magnets" },
+      { id: 112, nom: "Remag FLE01", prix: 250, image: "images/remag-fle01.png", categorie: "Magnets" },
+      { id: 113, nom: "Remag TORCAS (Stock = 0)", prix: 250, image: "images/remag-torcas.png", categorie: "Magnets" },
+      { id: 114, nom: "Remag NAU01", prix: 250, image: "images/remag-nau01.png", categorie: "Magnets" },
+      { id: 115, nom: "Remag TOR01", prix: 250, image: "images/remag-tor01.png", categorie: "Magnets" },
+      { id: 116, nom: "Remag PIECE (Stock = 0)", prix: 250, image: "images/remag-pie.png", categorie: "Magnets" },
+      { id: 117, nom: "Remag COCO (Stock = 0)", prix: 250, image: "images/remag-coco.png", categorie: "Magnets" },
+      { id: 118, nom: "Box1 ( rai03-cas-tor03 )", prix: 600, image: "images/box1.png", categorie: "Shooters" },
+      { id: 119, nom: "Box4 ( Rasc- fle-lez )", prix: 600, image: "images/box4.png", categorie: "Shooters" },
+      { id: 120, nom: "Box3 ( hib-tor02-cagou )", prix: 600, image: "images/box3.png", categorie: "Shooters" },
+      { id: 126, nom: "Box5", prix: 600, image: "images/box5.png", categorie: "Shooters" },
+      { id: 127, nom: "Shot Cag", prix: 250, image: "images/shotcag.png", categorie: "Shooters" },
+      { id: 128, nom: "CC CAG01", prix: 100, image: "images/cc-cag01.png", categorie: "Can coolers" },
+      { id: 129, nom: "CC RAI03", prix: 100, image: "images/cc-rai03.png", categorie: "Can coolers" },
+      { id: 130, nom: "CC LEZ02", prix: 100, image: "images/cc-lez02.png", categorie: "Can coolers" },
+      { id: 131, nom: "CC TOR01", prix: 100, image: "images/cc-tor01.png", categorie: "Can coolers" },
+      { id: 132, nom: "CC FLE01", prix: 100, image: "images/cc-fle01.png", categorie: "Can coolers" },
+      { id: 133, nom: "CC TOR03", prix: 100, image: "images/cc-tor03.png", categorie: "Can coolers" },
+      { id: 134, nom: "CC CAS01", prix: 100, image: "images/cc-cas01.png", categorie: "Can coolers" },
+      { id: 135, nom: "CC NAU01", prix: 100, image: "images/cc-nau01.png", categorie: "Can coolers" },
+      { id: 136, nom: "PLK CAG (porte clés)", prix: 400, image: "images/plk-cag.png", categorie: "Divers" },
+      { id: 137, nom: "Boule à neige tortue (Stock = 0)", prix: 800, image: "images/resnow01-tor.png", categorie: "Divers" },
+      { id: 138, nom: "R NAU", prix: 7490, image: "images/r-nau.png", categorie: "Blocs résine" },
+      { id: 139, nom: "SQ NAU", prix: 7490, image: "images/sq-nau.png", categorie: "Blocs résine" },
+      { id: 140, nom: "R RAI", prix: 7490, image: "images/r-rai.png", categorie: "Blocs résine" },
+      { id: 141, nom: "SQ RAI", prix: 7490, image: "images/sq-rai.png", categorie: "Blocs résine" },
+      { id: 142, nom: "R fl+NAU", prix: 7490, image: "images/r-fl-nau.png", categorie: "Blocs résine" },
+      { id: 143, nom: "SQ fl+NAU", prix: 7490, image: "images/sq-fl-nau.png", categorie: "Blocs résine" },
+      { id: 144, nom: "R FL+TOR", prix: 7490, image: "images/r-fl-tor.png", categorie: "Blocs résine" },
+      { id: 145, nom: "SQ FL+TOR", prix: 7490, image: "images/sq-fl-tor.png", categorie: "Blocs résine" },
+      { id: 146, nom: "R TOR01", prix: 7490, image: "images/r-tor01.png", categorie: "Blocs résine" },
+      { id: 147, nom: "SQ FL+TOR03", prix: 7490, image: "images/sq-fl-tor03.png", categorie: "Blocs résine" },
+      { id: 148, nom: "COL01 (logo back M)", prix: 300, image: "images/col01-logo-back-m.png", categorie: "Colliers" },
+      { id: 149, nom: "COL02 (logo back b)", prix: 300, image: "images/col02-logo-back-b.png", categorie: "Colliers" },
+      { id: 150, nom: "COL03 (écaille)", prix: 300, image: "images/col03-ecaille.png", categorie: "Colliers" },
+      { id: 151, nom: "COL04 (hippocampe)", prix: 300, image: "images/col04-hippocampe.png", categorie: "Colliers" },
+      { id: 152, nom: "COL05 (Simple B)", prix: 300, image: "images/col05-simple-b.png", categorie: "Colliers" },
+      { id: 153, nom: "COL06 (Vide M)", prix: 300, image: "images/col06-vide-m.png", categorie: "Colliers" },
+      { id: 154, nom: "COL07 (Vide B)", prix: 300, image: "images/col07-vide-b.png", categorie: "Colliers" },
+      { id: 155, nom: "COL08 (double M)", prix: 300, image: "images/col08-double-m.png", categorie: "Colliers" },
+      { id: 156, nom: "COL09 (Double B)", prix: 300, image: "images/col09-double-b.png", categorie: "Colliers" },
+      { id: 157, nom: "COL10 (big back)", prix: 300, image: "images/col10-big-back.png", categorie: "Colliers" },
+      { id: 158, nom: "COL11 (triple M)", prix: 300, image: "images/col11-triple-m.png", categorie: "Colliers" },
+      { id: 159, nom: "COL12 (tripleB)", prix: 300, image: "images/col12-tripleb.png", categorie: "Colliers" },
+      { id: 160, nom: "COL13 (Dau m)", prix: 300, image: "images/col13-dau-m.png", categorie: "Colliers" },
+      { id: 161, nom: "COL14 (Dau b)", prix: 300, image: "images/col14-dau-b.png", categorie: "Colliers" },
+      { id: 162, nom: "COL15 (hook m)(Stock = 0)", prix: 300, image: "images/col15-hook-m.png", categorie: "Colliers" },
+      { id: 163, nom: "COL16 (Hook b)", prix: 300, image: "images/col16-hook-b.png", categorie: "Colliers" },
+      { id: 164, nom: "COL17 (Tail M)", prix: 300, image: "images/col17-tail-m.png", categorie: "Colliers" },
+      { id: 165, nom: "COL18 (TAIL B)", prix: 300, image: "images/col18-tail-b.png", categorie: "Colliers" },
+      { id: 166, nom: "COL GL FISH (Stock = 39)", prix: 450, image: "images/col-gl-fish.png", categorie: "Colliers" },
+      { id: 167, nom: "COL GL Hippo (Stock = 23)", prix: 450, image: "images/col-gl-hippo.png", categorie: "Colliers" },
+      { id: 168, nom: "Plaque 01 (boho)(Stock = 12)", prix: 1800, image: "images/plaque-01-boho.png", categorie: "Bracelets" },
+      { id: 170, nom: "Plaque 07 (starfish)(Stock = 1)", prix: 1800, image: "images/plaque-07-starfish.png", categorie: "Bracelets" },
+      { id: 171, nom: "Métal 1 (Stock = 35)", prix: 300, image: "images/metal-1.png", categorie: "Bracelets" },
+      { id: 172, nom: "Métal 2 (Stock = 40)", prix: 300, image: "images/metal-2.png", categorie: "Bracelets" },
+      { id: 173, nom: "Métal 3 (Stock = 12)", prix: 300, image: "images/metal-3.png", categorie: "Bracelets" },
+      { id: 174, nom: "Bracelet dent (Stock = 21)", prix: 300, image: "images/bradent.png", categorie: "Bracelets" },
+      { id: 175, nom: "Bracelet tortue 2 (Stock = 27)", prix: 300, image: "images/bravidem.png", categorie: "Bracelets" },
+      { id: 176, nom: "Bracelet tortue blanche (Stock = 68)", prix: 300, image: "images/braturtlebig.png", categorie: "Bracelets" },
+    //  { id: 177, nom: "S Tortue (Stock = 0)", prix: 1000, image: "images/S-Tortue.png", categorie: "Produits gravés" },
+     // { id: 178, nom: "S Nautile (Stock = 0)", prix: 1000, image: "images/S-Nautile.png", categorie: "Produits gravés" },
+  { id: 179, nom: "L Nautile (Stock = 6)", prix: 2500, image: "images/M-Nautile.png", categorie: "Produits gravés" },
+    //  { id: 180, nom: "L Tortue (Stock = 1)", prix: 2500, image: "images/L-Tortue.png", categorie: "Produits gravés" },
+    //  { id: 181, nom: "L Cagou (Stock = 3)", prix: 2500, image: "images/L-Cagou.png", categorie: "Produits gravés" },
+    //  { id: 182, nom: "L Hibiscus (Stock = 3)", prix: 2500, image: "images/M-Hibiscus.png", categorie: "Produits gravés" }
+    ];
+  </script>
 
-// Détecte automatiquement une mention "(stock = N)" (insensible à la casse) dans le nom d'un produit.
-// Si trouvée : produit.stock = N et produit.nomAffiche = nom nettoyé de cette mention.
-// Si absente : pas de stock défini => pas de vérification pour ce produit.
-const REGEX_STOCK = /\(\s*stock\s*=\s*(\d+)\s*\)/i;
-produits.forEach(p => {
-  const match = p.nom.match(REGEX_STOCK);
-  if (match) {
-    p.stock = parseInt(match[1]);
-    p.nomAffiche = p.nom.replace(REGEX_STOCK, "").replace(/\s+/g, " ").trim();
-  } else {
-    p.nomAffiche = p.nom.trim();
-  }
-});
+  <script>
+    const container = document.getElementById("produitsContainer");
+    const totalEl = document.getElementById("total");
 
-const tarifsGros = {
-  "Décapsuleurs":       { seuil: 50,  prix: 310 },
-  "Magnets résine":   { seuil: 200, prix: 250  },
-  "Dessous de verre":   { seuil: 200, prix: 85  },
-  "Dessous de plat":    { seuil: 50,  prix: 390 },
-  "Miroirs":            { seuil: 50,  prix: 310 },
-  "Boîtes de shooters": { seuil: 50,  prix: 450 }
-};
-
-const TVA_TAUX = 0.16;
-const container = document.getElementById("produitsContainer");
-const totalEl = document.getElementById("total");
-
-// URL du Worker Cloudflare qui sert de pont vers Dolibarr
-const URL_PONT_DOLIBARR = "https://fragrant-hall-2132.tiisouvenirs.workers.dev";
-
-function afficherProduits() {
-  const categories = {};
-  produits.forEach(p => {
-    if (!categories[p.categorie]) categories[p.categorie] = [];
-    categories[p.categorie].push(p);
-  });
-
-  for (const [categorie, liste] of Object.entries(categories)) {
-    const section = document.createElement("div");
-    section.className = "categorie";
-    const titre = document.createElement("h2");
-    titre.textContent = categorie;
-    section.appendChild(titre);
-
-    if (categorie === "Boîtes de shooters") {
-      const banner = document.createElement("img");
-      banner.src = "images/shot-banner-box.png";
-      banner.alt = "Boîtes de shooters";
-      banner.className = "banner-categorie";
-      section.appendChild(banner);
+    function extraireStock(nom) {
+      const match = nom.match(/\(\s*Stock\s*=\s*(\d+)\s*\)/i);
+      return match ? parseInt(match[1]) : null;
     }
 
-    const regleGros = tarifsGros[categorie];
-    if (regleGros) {
-      const prixNormal = liste[0].prix;
-      const tarifBox = document.createElement("div");
-      tarifBox.className = "tarif-box";
-      tarifBox.innerHTML = `
-        <strong>Prix unitaire :</strong> ${prixNormal} CFP HT<br>
-        <strong>Tarif de gros :</strong> ${regleGros.prix} CFP HT à partir de ${regleGros.seuil} unités
-      `;
-      section.appendChild(tarifBox);
+    function nettoyerNom(nom) {
+      return nom.replace(/\s*\(\s*Stock\s*=\s*\d+\s*\)/gi, "").trim();
     }
 
-    const zone = document.createElement("div");
-    zone.className = "produits";
+    function afficherProduits() {
+      const categories = {};
+      produits.forEach(p => {
+        if (!categories[p.categorie]) categories[p.categorie] = [];
+        categories[p.categorie].push(p);
+      });
 
-    liste.forEach((produit) => {
-      const div = document.createElement("div");
-      div.className = "produit";
+      for (const [categorie, liste] of Object.entries(categories)) {
+        const section = document.createElement("div");
+        section.className = "categorie";
+        const titre = document.createElement("h2");
+        titre.textContent = categorie;
+        section.appendChild(titre);
 
-      const hasStock = typeof produit.stock === "number";
-      const enRupture = hasStock && produit.stock <= 0;
+        const zone = document.createElement("div");
+        zone.className = "produits";
 
-      // Zone image à taille fixe (identique pour tous les produits)
-      const imgWrap = document.createElement("div");
-      imgWrap.className = "produit-image";
-      const img = document.createElement("img");
-      img.src = produit.image;
-      img.alt = produit.nomAffiche;
-      imgWrap.appendChild(img);
+        liste.forEach(produit => {
+          const div = document.createElement("div");
+          div.className = "produit";
 
-      const nom = document.createElement("div");
-      nom.className = "produit-nom";
-      nom.textContent = produit.nomAffiche;
+          // Zone image à taille fixe
+          const imgWrap = document.createElement("div");
+          imgWrap.className = "produit-image";
+          const img = document.createElement("img");
+          img.src = produit.image;
+          img.alt = produit.nom;
+          imgWrap.appendChild(img);
 
-      const prix = document.createElement("div");
-      prix.className = "produit-prix";
-      prix.textContent = produit.prix + " CFP HT";
+          const stock = extraireStock(produit.nom);
+          const nomAffiche = nettoyerNom(produit.nom);
+          const enRupture = stock === 0;
 
-      div.appendChild(imgWrap);
-      div.appendChild(nom);
-      div.appendChild(prix);
+          const nom = document.createElement("div");
+          nom.className = "produit-nom";
+          nom.textContent = nomAffiche;
 
-      // Bloc du bas (stock/quantité ou rupture) toujours aligné en bas de la carte
-      const bas = document.createElement("div");
-      bas.className = "produit-bas";
+          const prix = document.createElement("div");
+          prix.className = "produit-prix";
+          prix.textContent = produit.prix + " CFP";
 
-      if (hasStock && produit.stock > 0) {
-        const stockInfo = document.createElement("div");
-        stockInfo.className = "stock-info";
-        stockInfo.textContent = "Stock : " + produit.stock;
-        bas.appendChild(stockInfo);
-      }
+          div.appendChild(imgWrap);
+          div.appendChild(nom);
+          div.appendChild(prix);
 
-      if (enRupture) {
-        const ruptureDiv = document.createElement("div");
-        ruptureDiv.className = "rupture-stock";
-        ruptureDiv.textContent = "REASSORT EN COURS";
-        bas.appendChild(ruptureDiv);
-      } else {
-        const input = document.createElement("input");
-        input.type = "number";
-        input.min = "0";
-        input.value = "0";
-        input.className = "quantity-input";
-        input.dataset.id = produit.id;
+          // Bloc du bas (stock/quantité ou rupture) toujours aligné en bas de la carte
+          const bas = document.createElement("div");
+          bas.className = "produit-bas";
 
-        if (hasStock) {
-          input.max = produit.stock;
-          input.dataset.stock = produit.stock;
-        }
+          if (stock !== null && stock > 0) {
+            const stockDiv = document.createElement("div");
+            stockDiv.className = "stock-info";
+            stockDiv.textContent = "Stock : " + stock;
+            bas.appendChild(stockDiv);
+          }
 
-        input.addEventListener("input", () => {
-          verifierStock(input);
-          majAffichage();
+          if (enRupture) {
+            const ruptureDiv = document.createElement("div");
+            ruptureDiv.className = "rupture-stock";
+            ruptureDiv.textContent = "REASSORT EN COURS";
+            bas.appendChild(ruptureDiv);
+          } else {
+            const input = document.createElement("input");
+            input.type = "number";
+            input.min = "0";
+            input.value = "0";
+            input.className = "quantity-input";
+            input.dataset.id = produit.id;
+            // Si un stock est affiché, on empêche de commander plus que ce stock
+            if (stock !== null && stock > 0) {
+              input.max = stock;
+              input.dataset.maxStock = stock;
+            }
+            input.addEventListener("input", function () {
+              limiterQuantite(this);
+              calculerTotal();
+            });
+            bas.appendChild(input);
+
+            const erreurDiv = document.createElement("div");
+            erreurDiv.className = "qty-error-msg";
+            erreurDiv.style.color = "red";
+            erreurDiv.style.fontSize = "0.75em";
+            erreurDiv.style.display = "none";
+            erreurDiv.textContent = "Quantité max atteinte";
+            bas.appendChild(erreurDiv);
+          }
+
+          div.appendChild(bas);
+          zone.appendChild(div);
         });
-        bas.appendChild(input);
 
-        const erreurDiv = document.createElement("div");
-        erreurDiv.className = "qty-error-msg";
-        erreurDiv.textContent = "Quantité max atteinte";
-        bas.appendChild(erreurDiv);
+        section.appendChild(zone);
+        container.appendChild(section);
+      }
+    }
+
+    // Empêche de saisir une quantité supérieure au stock disponible (quand un stock est affiché)
+    function limiterQuantite(input) {
+      const max = input.dataset.maxStock ? parseInt(input.dataset.maxStock) : null;
+      let valeur = parseInt(input.value);
+
+      if (isNaN(valeur) || valeur < 0) {
+        valeur = 0;
       }
 
-      div.appendChild(bas);
-      zone.appendChild(div);
-    });
+      const erreurDiv = input.parentElement.querySelector(".qty-error-msg");
 
-    section.appendChild(zone);
-    container.appendChild(section);
-  }
-}
+      if (max !== null && valeur > max) {
+        valeur = max;
+        if (erreurDiv) erreurDiv.style.display = "block";
+        input.classList.add("qty-error");
+      } else {
+        if (erreurDiv) erreurDiv.style.display = "none";
+        input.classList.remove("qty-error");
+      }
 
-// Empêche de saisir une quantité supérieure au stock disponible (quand un stock est précisé)
-function verifierStock(input) {
-  if (input.dataset.stock === undefined) return;
-  const stock = parseInt(input.dataset.stock);
-  let val = parseInt(input.value);
-  if (isNaN(val) || val < 0) val = 0;
-
-  const erreurDiv = input.parentElement.querySelector(".qty-error-msg");
-
-  if (val > stock) {
-    val = stock;
-    if (erreurDiv) erreurDiv.style.display = "block";
-    input.classList.add("qty-error");
-  } else {
-    if (erreurDiv) erreurDiv.style.display = "none";
-    input.classList.remove("qty-error");
-  }
-
-  input.value = val;
-}
-
-function lirePanier() {
-  const cart = [];
-  document.querySelectorAll(".quantity-input").forEach(input => {
-    verifierStock(input); // sécurité supplémentaire avant lecture du panier
-    const qte = parseInt(input.value || "0");
-    if (qte > 0) {
-      const produit = produits.find(p => p.id == input.dataset.id);
-      if (produit) cart.push({ produit, qte });
+      input.value = valeur;
     }
-  });
-  return cart;
-}
 
-function quantitesParCategorie(cart) {
-  const map = {};
-  cart.forEach(({ produit, qte }) => {
-    const cat = produit.categorie;
-    if (!map[cat]) map[cat] = 0;
-    map[cat] += qte;
-  });
-  return map;
-}
-
-function appliquerPrix(cart) {
-  const qteCat = quantitesParCategorie(cart);
-  return cart.map(({ produit, qte }) => {
-    let prixUnitaire = produit.prix;
-    const regle = tarifsGros[produit.categorie];
-    if (regle && qteCat[produit.categorie] >= regle.seuil) {
-      prixUnitaire = regle.prix;
+    function calculerTotal() {
+      let total = 0;
+      const inputs = document.querySelectorAll(".quantity-input");
+      inputs.forEach(input => {
+        const id = parseInt(input.dataset.id);
+        const produit = produits.find(p => p.id === id);
+        const qte = parseInt(input.value || "0");
+        total += qte * produit.prix;
+      });
+      totalEl.textContent = "Total : " + total + " CFP";
     }
-    const totalLigne = qte * prixUnitaire;
-    return { id: produit.id, nom: produit.nomAffiche, categorie: produit.categorie, qte, prixBase: produit.prix, prixApplique: prixUnitaire, totalLigne };
-  });
-}
 
-function calculerTotaux(lignes) {
-  const totalHT = lignes.reduce((s, l) => s + l.totalLigne, 0);
-  const tva = Math.round(totalHT * TVA_TAUX);
-  const totalTTC = totalHT + tva;
-  return { totalHT, tva, totalTTC };
-}
+    async function exportPDF() {
+      const client = document.getElementById('client').value;
+      if (!client) {
+        alert('Veuillez sélectionner un client.');
+        return;
+      }
 
-function majAffichage() {
-  const cart = lirePanier();
-  const lignes = appliquerPrix(cart);
-  const totaux = calculerTotaux(lignes);
-  totalEl.innerHTML =
-    "Total HT : " + totaux.totalHT + " CFP" +
-    "<br />TVA (16%) : " + totaux.tva + " CFP" +
-    "<br />TOTAL TTC : " + totaux.totalTTC + " CFP" +
-    '<div class="note">Les tarifs de gros se déclenchent par catégorie lorsque le seuil de quantité est atteint.</div>';
-}
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
 
-// ============================================================
-// Envoi de la commande :
-// 1) Crée le devis dans Dolibarr via le Worker Cloudflare
-// 2) Ouvre le mailto habituel vers le client
-// ============================================================
-async function envoyerCommande() {
-  const client = document.getElementById('client').value.trim();
-  if (!client) { alert('Veuillez saisir un client.'); return; }
+      let y = 10;
+      doc.text('Client : ' + client, 10, y);
+      y += 10;
 
-  const cart = lirePanier();
-  if (cart.length === 0) { alert('Aucun produit sélectionné.'); return; }
+      let total = 0;
+      const quantityInputs = document.querySelectorAll('.quantity-input');
+      quantityInputs.forEach(input => {
+        const quantity = parseInt(input.value) || 0;
+        if (quantity > 0) {
+          const id = parseInt(input.dataset.id);
+          const produit = produits.find(p => p.id === id);
+          const nomPropre = nettoyerNom(produit.nom);
+          const lineTotal = quantity * produit.prix;
+          total += lineTotal;
+          doc.text(`${nomPropre} x ${quantity} = ${lineTotal} CFP`, 10, y);
+          y += 10;
+          if (y > 280) {
+            doc.addPage();
+            y = 10;
+          }
+        }
+      });
 
-  const lignes = appliquerPrix(cart);
-  const { totalHT, tva, totalTTC } = calculerTotaux(lignes);
-
-  // --- 1) Création du devis dans Dolibarr via le Worker ---
-  const cartPourPont = cart.map(({ produit, qte }) => ({
-    id: produit.id,
-    nom: produit.nomAffiche,
-    prix: produit.prix,
-    qte: qte
-  }));
-
-  const bouton = document.querySelector('.export button');
-  const texteOriginal = bouton ? bouton.textContent : null;
-  if (bouton) { bouton.disabled = true; bouton.textContent = "Envoi en cours..."; }
-
-  try {
-    const reponse = await fetch(URL_PONT_DOLIBARR, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ client, cart: cartPourPont })
-    });
-
-    const resultat = await reponse.json();
-
-    if (!reponse.ok || resultat.error) {
-      alert("Le devis Dolibarr n'a pas pu être créé automatiquement (" +
-            (resultat.error || "erreur inconnue") +
-            "). La commande va quand même être envoyée par email, pense à créer le devis manuellement si besoin.");
-    } else if (resultat.lignesEnErreur && resultat.lignesEnErreur.length > 0) {
-      alert("Devis créé (n°" + resultat.propalId + ") mais certaines références n'ont pas pu être ajoutées : " +
-            resultat.lignesEnErreur.join(", ") + "\nÀ compléter manuellement dans Dolibarr.");
+      doc.text('Total : ' + total + ' CFP', 10, y + 10);
+      doc.save('commande_' + client.replace(/\s+/g, '_') + '.pdf');
     }
-    // Si tout est OK, pas d'alerte bloquante : on enchaîne directement sur l'email.
 
-  } catch (erreur) {
-    alert("Impossible de contacter le serveur pour créer le devis Dolibarr (" + erreur.message +
-          "). La commande va quand même être envoyée par email.");
-  } finally {
-    if (bouton) { bouton.disabled = false; bouton.textContent = texteOriginal; }
-  }
+    function envoyerCommande() {
+      const client = document.getElementById('client').value;
+      if (!client) {
+        alert('Veuillez sélectionner un client.');
+        return;
+      }
 
-  // --- 2) Envoi de l'email au client, comme avant ---
-  let corps = `Commande de : ${client}\nDate : ${new Date().toLocaleString('fr-FR')}\n\nDétails :\n`;
-  lignes.forEach(l => {
-    corps += `${l.nom} x ${l.qte} — PU ${l.prixApplique} CFP — Ligne ${l.totalLigne} CFP\n`;
-  });
-  corps += `\nTotal HT : ${totalHT} CFP\nTVA (16%) : ${tva} CFP\nTOTAL TTC : ${totalTTC} CFP`;
-  const sujet = "Commande de " + client;
-  window.location.href = `mailto:tiisouvenirs@gmail.com?subject=${encodeURIComponent(sujet)}&body=${encodeURIComponent(corps)}`;
-}
+      const commande = [];
+      const inputs = document.querySelectorAll(".quantity-input");
 
-afficherProduits();
-majAffichage();
-</script>
+      inputs.forEach(input => {
+        const quantity = parseInt(input.value) || 0;
+        if (quantity > 0) {
+          const id = parseInt(input.dataset.id);
+          const produit = produits.find(p => p.id === id);
+          if (produit) {
+            commande.push({
+              produit: nettoyerNom(produit.nom),
+              quantite: quantity,
+              prix: produit.prix
+            });
+          }
+        }
+      });
+
+      if (commande.length === 0) {
+        alert("Aucun produit sélectionné.");
+        return;
+      }
+
+      let email = "sarlcpie@gmail.com";
+      let sujet = "Commande de " + client;
+      let corps = "Commande de : " + client + "\n\n";
+
+      commande.forEach(item => {
+        corps += `${item.produit} x ${item.quantite} = ${item.quantite * item.prix} CFP\n`;
+      });
+
+      corps += `\nTotal : ${commande.reduce((sum, item) => sum + item.quantite * item.prix, 0)} CFP`;
+
+      let mailtoLink = `mailto:${email}?subject=${encodeURIComponent(sujet)}&body=${encodeURIComponent(corps)}`;
+      window.location.href = mailtoLink;
+    }
+
+    afficherProduits();
+  </script>
 </body>
 </html>
