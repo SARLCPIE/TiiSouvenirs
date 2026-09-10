@@ -128,6 +128,23 @@
       margin: 10px auto 20px;
       border-radius: 8px;
     }
+    .produit-prix .prix-barre {
+      text-decoration: line-through;
+      color: #888;
+      font-weight: normal;
+      font-size: 0.9em;
+      margin-right: 4px;
+    }
+    .produit-prix .prix-remise {
+      color: #1a7a1a;
+    }
+    .remise-info {
+      text-align: center;
+      color: #1a7a1a;
+      font-weight: normal;
+      font-size: 0.9em;
+      margin-top: 10px;
+    }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
@@ -144,8 +161,8 @@
     Total HT : 0 CFP
     <br />TVA (16%) : 0 CFP
     <br />TOTAL TTC : 0 CFP
-    <div class="note">Les tarifs de gros se déclenchent par catégorie lorsque le seuil de quantité est atteint.</div>
   </div>
+  <div class="remise-info" id="remiseInfo"></div>
 
   <div class="export">
     <button onclick="exportPDF()">Exporter en PDF</button>
@@ -222,6 +239,7 @@ const tarifsGros = {
 const TVA_TAUX = 0.16;
 const container = document.getElementById("produitsContainer");
 const totalEl = document.getElementById("total");
+const remiseInfoEl = document.getElementById("remiseInfo");
 
 function afficherProduits() {
   const categories = {};
@@ -281,6 +299,10 @@ function afficherProduits() {
 
       const prix = document.createElement("div");
       prix.className = "produit-prix";
+      prix.dataset.prixNormal = produit.prix;
+      if (tarifsGros[produit.categorie]) {
+        prix.dataset.categorie = produit.categorie;
+      }
       prix.textContent = produit.prix + " CFP HT";
 
       div.appendChild(imgWrap);
@@ -401,6 +423,58 @@ function calculerTotaux(lignes) {
   return { totalHT, tva, totalTTC };
 }
 
+// Calcule, pour chaque catégorie soumise à un tarif de gros, la quantité
+// totale commandée et si le seuil est atteint.
+function calculerEtatsGros(qteParCategorie) {
+  const etats = {};
+  Object.keys(tarifsGros).forEach(cat => {
+    const regle = tarifsGros[cat];
+    const qte = qteParCategorie[cat] || 0;
+    etats[cat] = { qte, seuil: regle.seuil, prixRemise: regle.prix, active: qte >= regle.seuil };
+  });
+  return etats;
+}
+
+// Affiche le prix barré + le prix remisé en vert sur chaque carte produit
+// dont la catégorie a atteint son seuil de tarif de gros.
+function mettreAJourAffichagePrix(etatsGros) {
+  document.querySelectorAll('.produit-prix[data-categorie]').forEach(prixDiv => {
+    const cat = prixDiv.dataset.categorie;
+    const etat = etatsGros[cat];
+    const prixNormal = prixDiv.dataset.prixNormal;
+    if (etat && etat.active) {
+      prixDiv.innerHTML =
+        '<span class="prix-barre">' + prixNormal + ' CFP HT</span>' +
+        '<span class="prix-remise">' + etat.prixRemise + ' CFP HT</span>';
+    } else {
+      prixDiv.textContent = prixNormal + " CFP HT";
+    }
+  });
+}
+
+// Met à jour, en bas de page, une ligne par catégorie concernée dès
+// qu'une quantité y est saisie : remise appliquée, ou quantité manquante
+// pour l'atteindre.
+function majRemiseInfoBas(etatsGros) {
+  const lignes = [];
+  Object.keys(tarifsGros).forEach(cat => {
+    const etat = etatsGros[cat];
+    if (etat.active) {
+      lignes.push(
+        cat + " : remise appliquée → " + etat.prixRemise +
+        " CFP HT/u (" + etat.qte + " unités)"
+      );
+    } else if (etat.qte > 0) {
+      const restant = etat.seuil - etat.qte;
+      lignes.push(
+        cat + " : plus que " + restant + " unité(s) pour atteindre " +
+        etat.prixRemise + " CFP HT/u"
+      );
+    }
+  });
+  remiseInfoEl.innerHTML = lignes.join("<br>");
+}
+
 function majAffichage() {
   const cart = lirePanier();
   const lignes = appliquerPrix(cart);
@@ -408,8 +482,12 @@ function majAffichage() {
   totalEl.innerHTML =
     "Total HT : " + totaux.totalHT + " CFP" +
     "<br />TVA (16%) : " + totaux.tva + " CFP" +
-    "<br />TOTAL TTC : " + totaux.totalTTC + " CFP" +
-    '<div class="note">Les tarifs de gros se déclenchent par catégorie lorsque le seuil de quantité est atteint.</div>';
+    "<br />TOTAL TTC : " + totaux.totalTTC + " CFP";
+
+  const qteParCategorie = quantitesParCategorie(cart);
+  const etatsGros = calculerEtatsGros(qteParCategorie);
+  mettreAJourAffichagePrix(etatsGros);
+  majRemiseInfoBas(etatsGros);
 }
 
 async function exportPDF() {
