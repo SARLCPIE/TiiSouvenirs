@@ -181,21 +181,21 @@ const produits = [
   { id: 8, nom: "REMAG_TORTUETIKI (stock = 0)", prix: 300, image: "images/Remag-tortuetiki.png", categorie: "Magnets résine" },
   { id: 9, nom: "REMAG_TIKI (stock = 0)", prix: 300, image: "images/Remag-tiki.png", categorie: "Magnets résine" },
   { id: 10, nom: "REMAG_VAA (stock = 0)", prix: 300, image: "images/Remag-vaa.png", categorie: "Magnets résine" },
-  { id: 11, nom: "REMAG_VAHINE_1 (stock = 1)", prix: 300, image: "images/Remag-vahine1.png", categorie: "Magnets résine" },
+  { id: 11, nom: "REMAG_VAHINE_1 (stock = 0)", prix: 300, image: "images/Remag-vahine1.png", categorie: "Magnets résine" },
   { id: 12, nom: "REMAG_VAHINE_2 (stock = 0)", prix: 300, image: "images/Remag-vahine2.png", categorie: "Magnets résine" },
   { id: 13, nom: "REMAG_DRAPEAU (stock = 0)", prix: 300, image: "images/Remag-drapeau.png", categorie: "Magnets résine" },
   { id: 14, nom: "REMAG_PIECE (stock = 0)", prix: 300, image: "images/Remag-piece.png", categorie: "Magnets résine" },
-  { id: 15, nom: "COA_LEZ (stock = 43)", prix: 95, image: "images/coa-lez.png", categorie: "Dessous de verre" },
+  { id: 15, nom: "COA_LEZ (stock = 40)", prix: 95, image: "images/coa-lez.png", categorie: "Dessous de verre" },
   { id: 16, nom: "COA_FLAG", prix: 95, image: "images/coa-flag.png", categorie: "Dessous de verre" },
   { id: 17, nom: "COA_HIB", prix: 95, image: "images/coa-hib.png", categorie: "Dessous de verre" },
-  { id: 18, nom: "COA_PAT (stock = 2)", prix: 95, image: "images/coa-pat.png", categorie: "Dessous de verre" },
+  { id: 18, nom: "COA_PAT (stock = 0)", prix: 95, image: "images/coa-pat.png", categorie: "Dessous de verre" },
   { id: 19, nom: "COA_RAI", prix: 95, image: "images/coa-rai.png", categorie: "Dessous de verre" },
   { id: 20, nom: "COA_TOR", prix: 95, image: "images/coa-tor.png", categorie: "Dessous de verre" },
   { id: 21, nom: "COA_VAH (Stock = 0)", prix: 95, image: "images/coa-vah.png", categorie: "Dessous de verre" },
   { id: 22, nom: "COA_BAL (Stock = 0)", prix: 95, image: "images/coa-bal.png", categorie: "Dessous de verre" },
-  { id: 23, nom: "COAB_FLAG ", prix: 430, image: "images/coa-flag.png", categorie: "Dessous de plat" },
+  { id: 23, nom: "COAB_FLAG (Stock = 31)", prix: 430, image: "images/coa-flag.png", categorie: "Dessous de plat" },
   { id: 24, nom: "COAB_RAI (Stock = 0)", prix: 430, image: "images/coa-rai.png", categorie: "Dessous de plat" },
-  { id: 25, nom: "COAB_TOR (Stock = 66)", prix: 430, image: "images/coa-tor.png", categorie: "Dessous de plat" },
+  { id: 25, nom: "COAB_TOR (Stock = 0)", prix: 430, image: "images/coa-tor.png", categorie: "Dessous de plat" },
   { id: 26, nom: "Mir_Comp_Flag", prix: 345, image: "images/mir-comp-flag.png", categorie: "Miroirs" },
   { id: 27, nom: "Mir_Comp_Hib", prix: 345, image: "images/mir-comp-hib.png", categorie: "Miroirs" },
   { id: 28, nom: "Mir_Comp_Rai", prix: 345, image: "images/mir-comp-rai.png", categorie: "Miroirs" },
@@ -324,7 +324,7 @@ function afficherProduits() {
       if (enRupture) {
         const ruptureDiv = document.createElement("div");
         ruptureDiv.className = "rupture-stock";
-        ruptureDiv.textContent = "REASSORT EN COURS";
+        ruptureDiv.textContent = "ARRIVAGE EN COURS";
         bas.appendChild(ruptureDiv);
       } else {
         const input = document.createElement("input");
